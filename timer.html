@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Timer</title>
+<link rel="stylesheet" href="style-timer.css" />
+</head>
+<body>
+<header>
+  <nav style="display: flex; justify-content: flex-start; gap: 10px; align-items: center; position: relative;">
+    <button id="to-timer" disabled>Timer</button>
+    <button id="to-algs">Algorithms</button>
+    <!-- Home button on the right side -->
+    <button id="home-button" style="margin-left: auto; padding: 6px 12px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer;">
+      Home
+    </button>
+  </nav>
+</header>
+
+<main>
+  <div id="timer-container">
+    <div id="scramble" class="scramble"></div>
+    <div id="timer-display">0.00</div>
+    <button id="start-stop-button">Start</button>
+  </div>
+
+  <aside id="history-panel">
+    <div id="history-list" class="history-list"></div>
+    <button id="delete-all">Delete All</button>
+    <div id="average-time" class="average-time">Average: N/A</div>
+  </aside>
+</main>
+
+<script type="module" src="script-timer.js"></script>
+</body>
+</html>

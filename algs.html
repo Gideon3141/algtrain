@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Algorithms</title>
+  <link rel="stylesheet" href="style-algs.css" />
+</head>
+<body>
+  <header>
+    <nav>
+      <button id="to-timer">Timer</button>
+      <button id="to-algs" disabled>Algorithms</button>
+      <button id="home-button">Home</button>
+    </nav>
+  </header>
+
+  <div class="filters">
+    <label><input type="checkbox" value="not learnt" checked> Not Learnt</label>
+    <label><input type="checkbox" value="learning" checked> Learning</label>
+    <label><input type="checkbox" value="complete" checked> Complete</label>
+  </div>
+
+  <main>
+    <div id="alg-list"></div>
+  </main>
+
+  <script type="module" src="script-algs.js"></script>
+</body>
+</html>
