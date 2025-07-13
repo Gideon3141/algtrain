@@ -12,7 +12,9 @@ const toAlgsBtn = document.getElementById('to-algs');
 const homeBtn = document.getElementById('home-button');
 
 const algs = allAlgorithms[event]?.[type] || [];
+
 let filterStatuses = new Set(['not learnt', 'learning', 'complete']);
+
 let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
 function saveUserCustomAlts() {
@@ -29,12 +31,13 @@ function renderAlgs() {
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'alg-name';
+
     const statusCircle = document.createElement('span');
     statusCircle.className = 'status-indicator';
 
     if (alg.status === 'not learnt') statusCircle.classList.add('status-blank');
-    if (alg.status === 'learning') statusCircle.classList.add('status-learning');
-    if (alg.status === 'complete') statusCircle.classList.add('status-learned');
+    else if (alg.status === 'learning') statusCircle.classList.add('status-learning');
+    else if (alg.status === 'complete') statusCircle.classList.add('status-learned');
 
     nameDiv.textContent = alg.name;
     nameDiv.prepend(statusCircle);
@@ -43,6 +46,8 @@ function renderAlgs() {
     const mainAlg = document.createElement('div');
     mainAlg.textContent = alg.alg;
     card.appendChild(mainAlg);
+
+    // <-- Scramble display REMOVED here as requested -->
 
     if (alg.image) {
       const img = document.createElement('img');
@@ -53,12 +58,13 @@ function renderAlgs() {
     }
 
     const hasDefaultAlts = alg.alternates && alg.alternates.length > 0;
-    const hasUserAlts = userCustomAlts[alg.name]?.length > 0;
+    const hasUserAlts = userCustomAlts[alg.name] && userCustomAlts[alg.name].length > 0;
 
     if (hasDefaultAlts || hasUserAlts) {
       const toggle = document.createElement('div');
       toggle.className = 'toggle-arrow';
       toggle.textContent = '▶ Show alternates';
+      toggle.style.userSelect = 'none';
 
       const altList = document.createElement('div');
       altList.style.display = 'none';
@@ -68,7 +74,12 @@ function renderAlgs() {
         alg.alternates.forEach(alt => {
           const altDiv = document.createElement('div');
           altDiv.textContent = alt;
-          altDiv.className = 'alt-alg';
+          altDiv.style.border = '1px solid #555';
+          altDiv.style.borderRadius = '10px';
+          altDiv.style.padding = '5px 8px';
+          altDiv.style.marginBottom = '5px';
+          altDiv.style.backgroundColor = '#2a2a2a';
+          altDiv.style.color = '#fff';
           altList.appendChild(altDiv);
         });
       }
@@ -76,7 +87,15 @@ function renderAlgs() {
       if (hasUserAlts) {
         userCustomAlts[alg.name].forEach((alt, index) => {
           const userAltDiv = document.createElement('div');
-          userAltDiv.className = 'alt-alg user';
+          userAltDiv.style.border = '1px solid #555';
+          userAltDiv.style.borderRadius = '10px';
+          userAltDiv.style.padding = '5px 8px';
+          userAltDiv.style.marginBottom = '5px';
+          userAltDiv.style.backgroundColor = '#2a2a2a';
+          userAltDiv.style.color = '#fff';
+          userAltDiv.style.display = 'flex';
+          userAltDiv.style.justifyContent = 'space-between';
+          userAltDiv.style.alignItems = 'center';
 
           const altText = document.createElement('span');
           altText.textContent = alt;
@@ -84,10 +103,20 @@ function renderAlgs() {
 
           const deleteBtn = document.createElement('button');
           deleteBtn.textContent = '×';
-          deleteBtn.className = 'delete-alt-btn';
+          deleteBtn.style.background = 'transparent';
+          deleteBtn.style.border = 'none';
+          deleteBtn.style.color = '#f55';
+          deleteBtn.style.fontWeight = 'bold';
+          deleteBtn.style.cursor = 'pointer';
+          deleteBtn.style.fontSize = '1.2rem';
+          deleteBtn.style.lineHeight = '1';
+          deleteBtn.style.padding = '0 6px';
+
           deleteBtn.addEventListener('click', () => {
             userCustomAlts[alg.name].splice(index, 1);
-            if (userCustomAlts[alg.name].length === 0) delete userCustomAlts[alg.name];
+            if (userCustomAlts[alg.name].length === 0) {
+              delete userCustomAlts[alg.name];
+            }
             saveUserCustomAlts();
             renderAlgs();
           });
@@ -98,8 +127,13 @@ function renderAlgs() {
       }
 
       toggle.addEventListener('click', () => {
-        altList.style.display = altList.style.display === 'none' ? 'block' : 'none';
-        toggle.textContent = altList.style.display === 'none' ? '▶ Show alternates' : '▼ Hide alternates';
+        if (altList.style.display === 'none') {
+          altList.style.display = 'block';
+          toggle.textContent = '▼ Hide alternates';
+        } else {
+          altList.style.display = 'none';
+          toggle.textContent = '▶ Show alternates';
+        }
       });
 
       card.appendChild(toggle);
@@ -107,17 +141,36 @@ function renderAlgs() {
     }
 
     const addAltDiv = document.createElement('div');
-    addAltDiv.className = 'add-alt-container';
+    addAltDiv.style.marginTop = '10px';
+    addAltDiv.style.display = 'flex';
+    addAltDiv.style.gap = '10px';
+    addAltDiv.style.alignItems = 'center';
 
     const newAltInput = document.createElement('input');
     newAltInput.type = 'text';
     newAltInput.placeholder = 'Add custom alternate algorithm';
+    newAltInput.style.flexGrow = '1';
+    newAltInput.style.padding = '6px 8px';
+    newAltInput.style.borderRadius = '8px';
+    newAltInput.style.border = '1px solid #555';
+    newAltInput.style.backgroundColor = '#1e1e1e';
+    newAltInput.style.color = '#fff';
 
     const addAltBtn = document.createElement('button');
     addAltBtn.textContent = '+';
+    addAltBtn.title = 'Add custom alternate';
+    addAltBtn.style.padding = '6px 12px';
+    addAltBtn.style.borderRadius = '8px';
+    addAltBtn.style.border = 'none';
+    addAltBtn.style.cursor = 'pointer';
+    addAltBtn.style.backgroundColor = '#4caf50';
+    addAltBtn.style.color = 'white';
+    addAltBtn.style.fontWeight = 'bold';
+
     addAltBtn.addEventListener('click', () => {
       const val = newAltInput.value.trim();
       if (!val) return alert('Please enter an algorithm.');
+
       if (!userCustomAlts[alg.name]) userCustomAlts[alg.name] = [];
       userCustomAlts[alg.name].push(val);
       saveUserCustomAlts();
@@ -136,7 +189,9 @@ function renderAlgs() {
 filtersDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
   cb.addEventListener('change', () => {
     filterStatuses = new Set(
-      Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(cb => cb.value)
+      Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
+        el => el.value
+      )
     );
     renderAlgs();
   });
@@ -145,9 +200,13 @@ filtersDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
 toTimerBtn.addEventListener('click', () => {
   window.location.href = `timer.html?event=${event}&type=${type}`;
 });
+
 toAlgsBtn.disabled = true;
-homeBtn.addEventListener('click', () => {
-  window.location.href = 'index.html';
-});
+
+if (homeBtn) {
+  homeBtn.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+}
 
 renderAlgs();

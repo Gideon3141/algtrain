@@ -37,8 +37,26 @@ function generateScramble() {
   return scramble.join(" ");
 }
 
+function reverseAlg(alg) {
+  return alg
+    .split(' ')
+    .reverse()
+    .map(move => {
+      if (move.endsWith("'")) return move.slice(0, -1);
+      else if (move.endsWith("2")) return move;
+      else return move + "'";
+    })
+    .join(' ');
+}
+
 function setScramble() {
-  currentScramble = generateScramble();
+  const algs = allAlgorithms[event]?.[type] || [];
+  if (algs.length === 0) {
+    currentScramble = generateScramble();
+  } else {
+    const randomAlg = algs[Math.floor(Math.random() * algs.length)];
+    currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
+  }
   scrambleDiv.textContent = currentScramble;
 }
 
@@ -58,15 +76,9 @@ function stopTimer() {
   clearInterval(timerInterval);
   const finalTime = ((performance.now() - startTime) / 1000).toFixed(2);
 
-  const scramble = currentScramble;
-  const alg = allAlgorithms[event]?.[type]?.find(a => scramble.includes(a.name)) || null;
-
   solves.unshift({
     time: finalTime,
-    scramble,
-    alg: alg ? alg.alg : "",
-    name: alg ? alg.name : "",
-    image: alg ? alg.image : ""
+    scramble: currentScramble,
   });
 
   localStorage.setItem(`${event}_${type}_times`, JSON.stringify(solves));
@@ -170,10 +182,7 @@ function showDetail(index) {
 
   const content = document.createElement('div');
   content.innerHTML = `
-    <strong>${solve.name || 'Custom Solve'}</strong><br>
     <em>${solve.scramble}</em><br>
-    ${solve.alg ? `<code>${solve.alg}</code><br>` : ''}
-    ${solve.image ? `<img src="${solve.image}" class="alg-preview" />` : ''}
   `;
   detail.appendChild(content);
 
