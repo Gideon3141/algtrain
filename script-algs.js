@@ -194,28 +194,44 @@ function renderAlgs() {
 }
 
 function setupFilters() {
-  filtersDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
+  const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
+  console.log('Setting up filters, found checkboxes:', checkboxes.length);
+  console.log('Current filterStatuses:', Array.from(filterStatuses));
+  
+  checkboxes.forEach(cb => {
     // Restore checkbox state from localStorage
     cb.checked = filterStatuses.has(cb.value);
+    console.log(`Checkbox ${cb.value} set to:`, cb.checked);
     
     cb.addEventListener('change', () => {
+      // Update filterStatuses
       filterStatuses = new Set(
         Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
           el => el.value
         )
       );
+      
       // Save to localStorage
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(filterStatuses)));
+      console.log('Saved filters to localStorage:', Array.from(filterStatuses));
+      
       renderAlgs();
     });
   });
 }
 
+// Initialize everything when DOM is ready
+function initializeApp() {
+  console.log('Initializing app...');
+  setupFilters();
+  renderAlgs();
+}
+
 // Wait for DOM to be ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', setupFilters);
+  document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
-  setupFilters();
+  initializeApp();
 }
 
 toTimerBtn.addEventListener('click', () => {
@@ -229,5 +245,3 @@ if (homeBtn) {
     window.location.href = 'index.html';
   });
 }
-
-renderAlgs();

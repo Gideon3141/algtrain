@@ -1,2 +1,2 @@
-// script.js - Main JavaScript file
-console.log("Script loaded successfully");
+
+// Main script file - currently unused
