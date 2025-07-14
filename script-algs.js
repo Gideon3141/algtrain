@@ -55,8 +55,6 @@ function renderAlgs() {
     mainAlg.textContent = alg.alg;
     card.appendChild(mainAlg);
 
-    // <-- Scramble display REMOVED here as requested -->
-
     if (alg.image) {
       const img = document.createElement('img');
       img.src = alg.image;
