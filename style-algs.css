@@ -93,11 +93,11 @@ nav button:hover:not(:disabled) {
 }
 
 .status-learning {
-  background-color: yellow;
+  background-color: #facc15;
 }
 
 .status-learned {
-  background-color: green;
+  background-color: #22c55e ;
 }
 
 .alg-preview {

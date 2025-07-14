@@ -38,6 +38,14 @@ function renderAlgs() {
     if (alg.status === 'not learnt') statusCircle.classList.add('status-blank');
     else if (alg.status === 'learning') statusCircle.classList.add('status-learning');
     else if (alg.status === 'complete') statusCircle.classList.add('status-learned');
+    statusCircle.style.cursor = 'pointer';
+    statusCircle.title = 'Click to change status';
+    statusCircle.addEventListener('click', () => {
+      if (alg.status === 'not learnt') alg.status = 'learning';
+      else if (alg.status === 'learning') alg.status = 'complete';
+      else alg.status = 'not learnt';
+      renderAlgs();
+    });
 
     nameDiv.textContent = alg.name;
     nameDiv.prepend(statusCircle);
