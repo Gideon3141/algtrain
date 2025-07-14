@@ -49,8 +49,6 @@ function reverseAlg(alg) {
     .join(' ');
 }
 
-let currentAlgName = null;
-
 function setScramble() {
   const allAlgs = allAlgorithms[event]?.[type] || [];
   
@@ -75,11 +73,9 @@ function setScramble() {
   
   if (filteredAlgs.length === 0) {
     currentScramble = generateScramble();
-    currentAlgName = null;
   } else {
     const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
     currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
-    currentAlgName = randomAlg.name;
   }
   scrambleDiv.textContent = currentScramble;
 }
@@ -104,7 +100,6 @@ function stopTimer() {
   solves.unshift({
     time: finalTime,
     scramble: currentScramble,
-    algorithm: currentAlgName,
   });
 
   localStorage.setItem(`${event}_${type}_times`, JSON.stringify(solves));
@@ -179,18 +174,7 @@ function renderHistory() {
     circle.style.lineHeight = '22px';
 
     item.appendChild(circle);
-    
-    const timeText = document.createElement('span');
-    timeText.textContent = ` ${parseFloat(solve.time).toFixed(2)}s`;
-    item.appendChild(timeText);
-    
-    if (solve.algorithm) {
-      const algText = document.createElement('span');
-      algText.textContent = ` - ${solve.algorithm}`;
-      algText.style.color = '#aaa';
-      algText.style.fontSize = '0.9rem';
-      item.appendChild(algText);
-    }
+    item.append(` ${parseFloat(solve.time).toFixed(2)}s`);
 
     item.addEventListener('click', () => {
       showDetail(index);
@@ -219,7 +203,6 @@ function showDetail(index) {
 
   const content = document.createElement('div');
   content.innerHTML = `
-    ${solve.algorithm ? `<strong>${solve.algorithm}</strong><br>` : ''}
     <em>${solve.scramble}</em><br>
   `;
   detail.appendChild(content);
