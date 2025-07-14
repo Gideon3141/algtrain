@@ -1,6 +1,7 @@
 import { allAlgorithms } from './algs.js';
 
 const STORAGE_KEY = 'userCustomAlts';
+const STATUS_STORAGE_KEY = 'algStatuses';
 const urlParams = new URLSearchParams(window.location.search);
 const event = urlParams.get('event') || '3x3';
 const type = urlParams.get('type') || 'PLL';
@@ -11,7 +12,17 @@ const toTimerBtn = document.getElementById('to-timer');
 const toAlgsBtn = document.getElementById('to-algs');
 const homeBtn = document.getElementById('home-button');
 
+// Load algorithms and apply saved statuses
 const algs = allAlgorithms[event]?.[type] || [];
+const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+
+// Apply saved statuses to algorithms
+algs.forEach(alg => {
+  const statusKey = `${event}_${type}_${alg.name}`;
+  if (savedStatuses[statusKey]) {
+    alg.status = savedStatuses[statusKey];
+  }
+});
 
 const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
 let filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
@@ -20,6 +31,14 @@ let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
 function saveUserCustomAlts() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(userCustomAlts));
+}
+
+function saveAlgStatus(algName, status) {
+  const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+  const statusKey = `${event}_${type}_${algName}`;
+  savedStatuses[statusKey] = status;
+  localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(savedStatuses));
+  console.log(`Saved status for ${algName}:`, status);
 }
 
 function renderAlgs() {
@@ -45,6 +64,9 @@ function renderAlgs() {
       if (alg.status === 'not learnt') alg.status = 'learning';
       else if (alg.status === 'learning') alg.status = 'complete';
       else alg.status = 'not learnt';
+      
+      // Save the status change to localStorage
+      saveAlgStatus(alg.name, alg.status);
       renderAlgs();
     });
 
