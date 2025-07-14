@@ -43,9 +43,9 @@ function saveAlgStatus(algName, status) {
 
 function renderAlgs() {
   algListDiv.innerHTML = '';
-  const filteredAlgs = algs.filter(alg => filterStatuses.has(alg.status));
-
-  filteredAlgs.forEach(alg => {
+  
+  // Show all algorithms regardless of filter settings
+  algs.forEach(alg => {
     const card = document.createElement('div');
     card.className = 'alg-card';
 

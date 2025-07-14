@@ -50,11 +50,31 @@ function reverseAlg(alg) {
 }
 
 function setScramble() {
-  const algs = allAlgorithms[event]?.[type] || [];
-  if (algs.length === 0) {
+  const allAlgs = allAlgorithms[event]?.[type] || [];
+  
+  // Load filter settings from localStorage
+  const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+  const filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
+  
+  // Load saved statuses and apply them
+  const STATUS_STORAGE_KEY = 'algStatuses';
+  const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+  
+  // Apply saved statuses to algorithms
+  allAlgs.forEach(alg => {
+    const statusKey = `${event}_${type}_${alg.name}`;
+    if (savedStatuses[statusKey]) {
+      alg.status = savedStatuses[statusKey];
+    }
+  });
+  
+  // Filter algorithms based on current filter settings
+  const filteredAlgs = allAlgs.filter(alg => filterStatuses.has(alg.status));
+  
+  if (filteredAlgs.length === 0) {
     currentScramble = generateScramble();
   } else {
-    const randomAlg = algs[Math.floor(Math.random() * algs.length)];
+    const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
     currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
   }
   scrambleDiv.textContent = currentScramble;
