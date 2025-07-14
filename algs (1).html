@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Algorithms</title>
+  <link rel="stylesheet" href="style-algs.css" />
+  <style>
+    /* Hide filter toggle on desktop */
+    #filters-toggle {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      #filters-toggle {
+        display: block;
+        margin: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background-color: #333;
+        color: white;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .filters {
+        position: static;
+        flex-direction: column;
+        margin: 10px;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <button id="to-timer">Timer</button>
+      <button id="to-algs" disabled>Algorithms</button>
+      <button id="home-button">Home</button>
+    </nav>
+  </header>
+
+  <button id="filters-toggle" class="filters-toggle">Filters ▼</button>
+
+  <div class="filters">
+    <label><input type="checkbox" value="not learnt" checked> Not Learnt</label>
+    <label><input type="checkbox" value="learning" checked> Learning</label>
+    <label><input type="checkbox" value="complete" checked> Complete</label>
+  </div>
+
+  <main>
+    <div id="alg-list"></div>
+  </main>
+
+  <script type="module" src="script-algs.js"></script>
+  <script>
+    const filtersToggle = document.getElementById('filters-toggle');
+    const filtersDiv = document.querySelector('.filters');
+
+    function updateFilterVisibility() {
+      if (window.innerWidth <= 768) {
+        filtersDiv.style.display = 'none';
+      } else {
+        filtersDiv.style.display = 'flex';
+      }
+    }
+
+    filtersToggle.addEventListener('click', () => {
+      const isVisible = filtersDiv.style.display === 'block' || filtersDiv.style.display === 'flex';
+      if (isVisible) {
+        filtersDiv.style.display = 'none';
+        filtersToggle.textContent = 'Filters ▼';
+      } else {
+        filtersDiv.style.display = 'flex';
+        filtersToggle.textContent = 'Filters ▲';
+      }
+    });
+
+    window.addEventListener('resize', updateFilterVisibility);
+    updateFilterVisibility(); // Run on load
+  </script>
+</body>
+</html>
