@@ -193,21 +193,30 @@ function renderAlgs() {
   });
 }
 
-filtersDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
-  // Restore checkbox state from localStorage
-  cb.checked = filterStatuses.has(cb.value);
-  
-  cb.addEventListener('change', () => {
-    filterStatuses = new Set(
-      Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
-        el => el.value
-      )
-    );
-    // Save to localStorage
-    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(filterStatuses)));
-    renderAlgs();
+function setupFilters() {
+  filtersDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    // Restore checkbox state from localStorage
+    cb.checked = filterStatuses.has(cb.value);
+    
+    cb.addEventListener('change', () => {
+      filterStatuses = new Set(
+        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
+          el => el.value
+        )
+      );
+      // Save to localStorage
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(filterStatuses)));
+      renderAlgs();
+    });
   });
-});
+}
+
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupFilters);
+} else {
+  setupFilters();
+}
 
 toTimerBtn.addEventListener('click', () => {
   window.location.href = `timer.html?event=${event}&type=${type}`;
