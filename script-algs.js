@@ -13,9 +13,7 @@ const homeBtn = document.getElementById('home-button');
 
 const algs = allAlgorithms[event]?.[type] || [];
 
-const FILTER_STORAGE_KEY = 'algFilters';
-
-let filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
+let filterStatuses = new Set(['not learnt', 'learning', 'complete']);
 
 let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
@@ -194,16 +192,13 @@ function renderAlgs() {
   });
 }
 
-// Restore checkbox states from localStorage
 filtersDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
-  cb.checked = filterStatuses.has(cb.value);
   cb.addEventListener('change', () => {
     filterStatuses = new Set(
       Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
         el => el.value
       )
     );
-    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(filterStatuses)));
     renderAlgs();
   });
 });
