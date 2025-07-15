@@ -7,8 +7,11 @@
   <link rel="stylesheet" href="style-home.css" />
 </head>
 <body>
-  <!-- Top-right home button -->
-  <div style="position: absolute; top: 1rem; right: 1rem;">
+  <!-- Top-right buttons -->
+  <div style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 10px;">
+    <button id="dark-mode-toggle" style="padding: 8px 14px; border-radius: 10px; border: none; background-color: #333; color: white; cursor: pointer;">
+      🌙
+    </button>
     <button id="home-button" style="padding: 8px 14px; border-radius: 10px; border: none; background-color: #333; color: white; cursor: pointer;">
       Home
     </button>
@@ -29,6 +32,7 @@
     </div>
   </main>
 
+  <script src="dark-mode.js"></script>
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const event = urlParams.get('event') || '3x3';
