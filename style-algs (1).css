@@ -1,0 +1,293 @@
+
+/* CSS Variables for theming */
+:root {
+  --bg-primary: #000;
+  --bg-secondary: #222;
+  --bg-tertiary: #444;
+  --bg-card: #1e1e1e;
+  --bg-alt: #2a2a2a;
+  --text-primary: white;
+  --text-secondary: #fff;
+  --text-muted: #ccc;
+  --border-color: #333;
+  --border-alt: #555;
+  --accent-color: #2f4;
+  --accent-alt: #4caf50;
+  --danger-color: #f55;
+  --status-learning: #facc15;
+  --status-learned: #22c55e;
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e0e0e0;
+  --bg-card: #ffffff;
+  --bg-alt: #f0f0f0;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #666666;
+  --border-color: #cccccc;
+  --border-alt: #999999;
+  --accent-color: #4caf50;
+  --accent-alt: #4caf50;
+  --danger-color: #d32f2f;
+  --status-learning: #ff9800;
+  --status-learned: #4caf50;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  background-color: var(--bg-secondary);
+  transition: background-color 0.3s ease;
+}
+
+nav button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: bold;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 44px;
+}
+
+@media (max-width: 768px) {
+  nav button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+  
+  nav {
+    padding: 8px;
+    gap: 8px;
+  }
+}
+
+nav button:disabled {
+  background-color: var(--border-color);
+  cursor: default;
+  opacity: 0.6;
+}
+
+nav button:hover:not(:disabled) {
+  background-color: var(--accent-color);
+}
+
+.filters {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 10px;
+}
+
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: var(--bg-card);
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+#alg-list {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.alg-card {
+  background-color: var(--bg-card);
+  padding: 1rem;
+  border-radius: 20px;
+  border: 2px solid var(--border-color);
+  width: 100%;
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .alg-card {
+    padding: 0.8rem;
+    border-radius: 15px;
+  }
+  
+  #alg-list {
+    padding: 1rem;
+    gap: 15px;
+  }
+}
+
+.alg-name {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--text-primary);
+  transition: border-color 0.3s ease;
+}
+
+.status-blank {
+  background-color: transparent;
+}
+
+.status-learning {
+  background-color: var(--status-learning);
+}
+
+.status-learned {
+  background-color: var(--status-learned);
+}
+
+.alg-preview {
+  width: 100px;
+  display: block;
+  margin: 10px 0;
+}
+
+.toggle-arrow {
+  cursor: pointer;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.alt-alg {
+  border: 1px solid var(--border-alt);
+  border-radius: 10px;
+  padding: 5px 8px;
+  margin-bottom: 5px;
+  background-color: var(--bg-alt);
+  color: var(--text-secondary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.alt-alg.user {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.delete-alt-btn {
+  background: transparent;
+  border: none;
+  color: var(--danger-color);
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0 6px;
+  transition: color 0.3s ease;
+}
+
+.add-alt-container {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.add-alt-container input {
+  flex-grow: 1;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-alt);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.add-alt-container button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: var(--accent-alt);
+  color: white;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+/* Hide toggle on desktop (larger than 768px) */
+@media (min-width: 769px) {
+  .toggle-arrow {
+    display: none !important;
+  }
+}
+
+/* Show toggle on mobile (up to 768px) */
+@media (max-width: 768px) {
+  .toggle-arrow {
+    display: block !important;
+  }
+}
+
+/* Hide toggle button on desktop */
+@media (min-width: 769px) {
+  .mobile-filters-toggle {
+    display: none;
+  }
+}
+
+/* Hide filters panel by default on mobile */
+@media (max-width: 768px) {
+  .filters {
+    display: none;
+    position: absolute;
+    top: 3rem;
+    right: 1rem;
+    flex-direction: column;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px;
+    z-index: 10;
+  }
+
+  .filters.active {
+    display: flex;
+  }
+
+  .mobile-filters-toggle {
+    display: inline-block;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    z-index: 20;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}

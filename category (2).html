@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Select Category</title>
+  <link rel="stylesheet" href="style-home.css" />
+</head>
+<body>
+  <!-- Top-right buttons -->
+  <div style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 10px;">
+    <button id="dark-mode-toggle" style="padding: 8px 14px; border-radius: 10px; border: none; background-color: #333; color: white; cursor: pointer;">
+      🌙
+    </button>
+    <button id="home-button" style="padding: 8px 14px; border-radius: 10px; border: none; background-color: #333; color: white; cursor: pointer;">
+      Home
+    </button>
+  </div>
+
+  <main>
+    <h1>Select a Category</h1>
+    <div class="event-container">
+      <div class="event-card" onclick="goToType('OLL')">
+        <h2>OLL</h2>
+        <div class="image-placeholder">OLL image here</div>
+      </div>
+      <div class="event-card" onclick="goToType('PLL')">
+        <h2>PLL</h2>
+        <div class="image-placeholder">PLL image here</div>
+      </div>
+      <!-- Add more categories if needed -->
+    </div>
+  </main>
+
+  <script src="dark-mode.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const event = urlParams.get('event') || '3x3';
+
+    function goToType(type) {
+      window.location.href = `algs.html?event=${event}&type=${type}`;
+    }
+
+    document.getElementById('home-button').addEventListener('click', () => {
+      window.location.href = 'index.html'; // or your home page filename
+    });
+  </script>
+</body>
+</html>
