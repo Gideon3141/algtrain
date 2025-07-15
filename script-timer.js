@@ -12,6 +12,7 @@ const deleteAllBtn = document.getElementById('delete-all');
 const averageTimeDiv = document.getElementById('average-time');
 const toAlgsBtn = document.getElementById('to-algs');
 const homeBtn = document.getElementById('home-button');
+const filtersDiv = document.querySelector('.filters');
 
 let isRunning = false;
 let startTime = null;
@@ -78,6 +79,31 @@ function setScramble() {
     currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
   }
   scrambleDiv.textContent = currentScramble;
+}
+
+function setupFilters() {
+  const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
+  
+  checkboxes.forEach(cb => {
+    // Restore checkbox state from localStorage
+    const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+    const filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
+    cb.checked = filterStatuses.has(cb.value);
+    
+    cb.addEventListener('change', () => {
+      // Update filter settings and save to localStorage
+      const newFilterStatuses = new Set(
+        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
+          el => el.value
+        )
+      );
+      
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(newFilterStatuses)));
+      
+      // Generate new scramble with updated filters
+      setScramble();
+    });
+  });
 }
 
 function startTimer() {
@@ -237,5 +263,6 @@ homeBtn.addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
+setupFilters();
 setScramble();
 renderHistory();
