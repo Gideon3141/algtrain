@@ -38,6 +38,21 @@ h1 {
   flex-wrap: wrap;
 }
 
+@media (max-width: 768px) {
+  .event-grid {
+    gap: 1rem;
+    padding: 0 1rem;
+  }
+  
+  body {
+    padding: 1rem;
+  }
+  
+  h1 {
+    font-size: 2rem;
+  }
+}
+
 .event-card {
   display: flex;
   flex-direction: column;
@@ -50,6 +65,20 @@ h1 {
   color: var(--text-primary);
   border: 2px solid var(--border-color);
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  min-height: 140px;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .event-card {
+    width: 140px;
+    min-height: 120px;
+    padding: 0.8rem;
+  }
+  
+  .event-title {
+    font-size: 1.1rem;
+  }
 }
 
 .event-card:hover {

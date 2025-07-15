@@ -62,6 +62,19 @@ nav button {
   color: var(--text-primary);
   font-weight: bold;
   transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 44px;
+}
+
+@media (max-width: 768px) {
+  nav button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+  
+  nav {
+    padding: 8px;
+    gap: 8px;
+  }
 }
 
 nav button:disabled {
@@ -112,6 +125,18 @@ nav button:hover:not(:disabled) {
   width: 100%;
   color: var(--text-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .alg-card {
+    padding: 0.8rem;
+    border-radius: 15px;
+  }
+  
+  #alg-list {
+    padding: 1rem;
+    gap: 15px;
+  }
 }
 
 .alg-name {
