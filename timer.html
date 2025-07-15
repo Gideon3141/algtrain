@@ -11,8 +11,11 @@
   <nav style="display: flex; justify-content: flex-start; gap: 10px; align-items: center; position: relative;">
     <button id="to-timer" disabled>Timer</button>
     <button id="to-algs">Algorithms</button>
-    <!-- Home button on the right side -->
-    <button id="home-button" style="margin-left: auto; padding: 6px 12px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer;">
+    <!-- Dark mode toggle and Home button on the right side -->
+    <button id="dark-mode-toggle" style="margin-left: auto; margin-right: 10px; padding: 6px 12px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer;">
+      🌙
+    </button>
+    <button id="home-button" style="padding: 6px 12px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer;">
       Home
     </button>
   </nav>
@@ -51,6 +54,7 @@
   </aside>
 </main>
 
+<script src="dark-mode.js"></script>
 <script type="module" src="script-timer.js"></script>
 </body>
 </html>

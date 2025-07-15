@@ -1,37 +1,75 @@
+
+/* CSS Variables for theming */
+:root {
+  --bg-primary: #121212;
+  --bg-secondary: #1f1f1f;
+  --bg-tertiary: #333;
+  --text-primary: white;
+  --text-secondary: #eee;
+  --text-muted: #ccc;
+  --border-color: #333;
+  --accent-color: #4caf50;
+  --danger-color: #b22222;
+  --danger-hover: #dc3c3c;
+  --button-hover: #555;
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #e0e0e0;
+  --text-primary: #000000;
+  --text-secondary: #333333;
+  --text-muted: #666666;
+  --border-color: #cccccc;
+  --accent-color: #4caf50;
+  --danger-color: #d32f2f;
+  --danger-hover: #b71c1c;
+  --button-hover: #d0d0d0;
+}
+
 /* Reset & base */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
+
 body {
-  background-color: #121212;
-  color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   font-family: Arial, sans-serif;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header nav {
   padding: 1rem;
-  background: #1f1f1f;
+  background: var(--bg-secondary);
+  transition: background-color 0.3s ease;
 }
 
 header nav button {
-  background-color: #333;
-  color: white;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   border: none;
   margin-right: 10px;
   padding: 10px 20px;
   font-size: 1rem;
   border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 header nav button:disabled {
-  background-color: #555;
+  background-color: var(--button-hover);
   cursor: default;
+}
+
+header nav button:hover:not(:disabled) {
+  background-color: var(--button-hover);
 }
 
 /* Layout */
@@ -59,45 +97,48 @@ main {
   text-align: center;
   max-width: 90vw;
   word-wrap: break-word;
-  color: #eee;
+  color: var(--text-secondary);
   margin-bottom: 10px;
+  transition: color 0.3s ease;
 }
 
 #timer-display {
   font-size: 5rem;
   font-weight: bold;
-  color: white;
+  color: var(--text-primary);
   width: 100%;
   text-align: center;
   font-variant-numeric: tabular-nums;
   user-select: none;
+  transition: color 0.3s ease;
 }
 
 #start-stop-button {
   padding: 15px 40px;
   font-size: 1.5rem;
   border-radius: 15px;
-  background-color: #333;
-  color: white;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   border: none;
   cursor: pointer;
   user-select: none;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #start-stop-button:hover {
-  background-color: #555;
+  background-color: var(--button-hover);
 }
 
 /* History panel on right */
 #history-panel {
   flex: 1 1 35%;
-  background-color: #1f1f1f;
+  background-color: var(--bg-secondary);
   border-radius: 15px;
   padding: 15px;
   display: flex;
   flex-direction: column;
   max-height: 80vh;
+  transition: background-color 0.3s ease;
 }
 
 .history-list {
@@ -110,7 +151,7 @@ main {
 }
 
 .history-item {
-  background-color: #333;
+  background-color: var(--bg-tertiary);
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 1.2rem;
@@ -120,12 +161,13 @@ main {
   align-items: center;
   user-select: none;
   border: 2px solid transparent;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.3s ease;
 }
 
 .history-item.selected {
-  border-color: #4caf50;
-  background-color: #2a5d2a;
+  border-color: var(--accent-color);
+  background-color: var(--accent-color);
+  color: white;
 }
 
 .delete-time-btn {
@@ -143,7 +185,7 @@ main {
 
 /* Delete All button */
 #delete-all {
-  background-color: #b22222;
+  background-color: var(--danger-color);
   border: none;
   color: white;
   padding: 10px;
@@ -152,17 +194,26 @@ main {
   cursor: pointer;
   user-select: none;
   margin-bottom: 10px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
 }
 
 #delete-all:hover {
-  background-color: #dc3c3c;
+  background-color: var(--danger-hover);
 }
 
 /* Average time */
 .average-time {
   font-size: 1.2rem;
   text-align: center;
-  color: #ccc;
+  color: var(--text-muted);
   user-select: none;
+  transition: color 0.3s ease;
+}
+
+/* Filter labels */
+.filters label {
+  background-color: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
