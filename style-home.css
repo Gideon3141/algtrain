@@ -1,0 +1,83 @@
+/* CSS Variables for theming */
+:root {
+  --bg-primary: #000000;
+  --bg-secondary: #1e1e1e;
+  --bg-tertiary: #333333;
+  --text-primary: white;
+  --text-secondary: #333333;
+  --border-color: #333333;
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #cccccc;
+  --text-primary: #000000;
+  --text-secondary: white;
+  --border-color: #cccccc;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  text-align: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+main {
+  padding: 2rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.event-container,
+.category-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.event-card,
+.category-card {
+  background-color: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 20px;
+  padding: 1.5rem;
+  width: 200px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.event-card:hover,
+.category-card:hover {
+  transform: scale(1.05);
+}
+
+.event-card h2,
+.category-card h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+}
+
+.image-placeholder {
+  margin-top: 1rem;
+  height: 100px;
+  background-color: var(--bg-tertiary);
+  border-radius: 12px;
+  text-align: center;          /* center content horizontally */
+  line-height: 100px;          /* center content vertically */
+  overflow: hidden;            /* crop if image is too large */
+}
+
+.image-placeholder img {
+  max-width: 100%;
+  max-height: 100%;
+  vertical-align: middle;
+  display: inline-block;       /* centers inside text-align container */
+}
