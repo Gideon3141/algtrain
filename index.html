@@ -9,14 +9,12 @@
 <body>
 <script src="dark-mode.js"></script>
 
-<!-- Dark mode toggle -->
 <div style="position: absolute; top: 20px; right: 20px;">
   <button id="dark-mode-toggle" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer; font-size: 1.2rem;">
     🌙
   </button>
 </div>
 
-<!-- Google Sign-In buttons -->
 <div style="position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;">
   <button id="googleSignIn" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #4285F4; color: white; cursor: pointer;">
     Sign in with Google
@@ -39,7 +37,6 @@
   </a>
 </div>
 
-<!-- Firebase SDKs -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-analytics.js";
@@ -69,9 +66,10 @@
   const signOutBtn = document.getElementById('signOut');
   const userNameSpan = document.getElementById('userName');
 
-  // Data
-  let userCustomAlts = {};
-  let savedStatuses = {};
+  // Data (Attached to window so other scripts can read them if needed on this page, 
+  // though localStorage is what will carry them to other pages)
+  window.userCustomAlts = {};
+  window.savedStatuses = {};
 
   // Sign in with Google
   signInBtn.addEventListener('click', async () => {
@@ -95,21 +93,26 @@
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
-      userCustomAlts = data.customAlts || {};
-      savedStatuses = data.statuses || {};
+      window.userCustomAlts = data.customAlts || {};
+      window.savedStatuses = data.statuses || {};
     } else {
-      userCustomAlts = {};
-      savedStatuses = {};
+      window.userCustomAlts = {};
+      window.savedStatuses = {};
       await setDoc(docRef, { customAlts: {}, statuses: {} });
     }
-    console.log('User data loaded:', userCustomAlts, savedStatuses);
+
+    // Save to local storage for use on other pages
+    localStorage.setItem('customAlts', JSON.stringify(window.userCustomAlts));
+    localStorage.setItem('savedStatuses', JSON.stringify(window.savedStatuses));
+
+    console.log('User data loaded:', window.userCustomAlts, window.savedStatuses);
   }
 
   // Save user data
   async function saveUserData(user) {
     await setDoc(doc(db, "users", user.uid), {
-      customAlts: userCustomAlts,
-      statuses: savedStatuses
+      customAlts: window.userCustomAlts,
+      statuses: window.savedStatuses
     });
     console.log('User data saved');
   }
@@ -125,8 +128,12 @@
       signInBtn.style.display = 'inline-block';
       signOutBtn.style.display = 'none';
       userNameSpan.textContent = '';
-      userCustomAlts = {};
-      savedStatuses = {};
+      window.userCustomAlts = {};
+      window.savedStatuses = {};
+
+      // Clear local storage on sign out
+      localStorage.removeItem('customAlts');
+      localStorage.removeItem('savedStatuses');
     }
   });
 </script>
