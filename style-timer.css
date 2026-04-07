@@ -4,13 +4,13 @@
   --bg-primary: #121212;
   --bg-secondary: #1f1f1f;
   --bg-tertiary: #333;
-  --text-primary: white;
+  --text-primary: #FFFFFF;
   --text-secondary: #eee;
   --text-muted: #ccc;
   --border-color: #333;
   --accent-color: #4caf50;
   --danger-color: #b22222;
-  --danger-hover: #dc3c3c;
+  --danger-hover: #FF0000;
   --button-hover: #555;
 }
 
@@ -24,7 +24,7 @@
   --border-color: #cccccc;
   --accent-color: #4caf50;
   --danger-color: #d32f2f;
-  --danger-hover: #b71c1c;
+  --danger-hover: #FF0000;
   --button-hover: #d0d0d0;
 }
 

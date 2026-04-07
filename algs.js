@@ -7,7 +7,7 @@ export const allAlgorithms = {
         scramble: "R U2 R' U' R U R' U2 R U' R'",
         alternates: ["R U R' U' R' F R2 U' R' U' R U R' F'"],
         status: "not learnt",
-        image: ""
+        image: "" // no image for PLL
       },
       {
         name: "Ub Perm",
@@ -168,6 +168,17 @@ export const allAlgorithms = {
         alternates: [],
         status: "not learnt",
         image: ""
+      }
+    ],
+
+    "OLL": [
+      {
+        name: "OLL Example",
+        alg: "R U2 R2 F R F' U2 R' F R F'",
+        scramble: "R U R' U R U2 R'",
+        alternates: [],
+        status: "not learnt",
+        image: "images/OLL-3x3.png" // ✅ This one shows
       }
     ]
   }

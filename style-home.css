@@ -70,10 +70,14 @@ h1 {
   height: 100px;
   background-color: var(--bg-tertiary);
   border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  text-align: center;          /* center content horizontally */
+  line-height: 100px;          /* center content vertically */
+  overflow: hidden;            /* crop if image is too large */
+}
+
+.image-placeholder img {
+  max-width: 100%;
+  max-height: 100%;
+  vertical-align: middle;
+  display: inline-block;       /* centers inside text-align container */
 }

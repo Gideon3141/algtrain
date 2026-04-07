@@ -20,15 +20,17 @@
   <main>
     <h1>Select a Category</h1>
     <div class="event-container">
+      <!-- OLL Card -->
       <div class="event-card" onclick="goToType('OLL')">
         <h2>OLL</h2>
-        <div class="image-placeholder">OLL image here</div>
+        <img src="images/OLL-3x3.png" alt="OLL Image" class="image-placeholder"/>
       </div>
+
+      <!-- PLL Card -->
       <div class="event-card" onclick="goToType('PLL')">
         <h2>PLL</h2>
-        <div class="image-placeholder">PLL image here</div>
+        <img src="images/PLL-3x3.png" alt="PLL Image" class="image-placeholder"/>
       </div>
-      <!-- Add more categories if needed -->
     </div>
   </main>
 
@@ -42,7 +44,7 @@
     }
 
     document.getElementById('home-button').addEventListener('click', () => {
-      window.location.href = 'index.html'; // or your home page filename
+      window.location.href = 'index.html';
     });
   </script>
 </body>

@@ -8,25 +8,128 @@
 </head>
 <body>
 <script src="dark-mode.js"></script>
-  <div style="position: absolute; top: 20px; right: 20px;">
-    <button id="dark-mode-toggle" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer; font-size: 1.2rem;">
-      🌙
-    </button>
-  </div>
-  <h1>Cube Timer</h1>
-  <div class="event-grid">
-    <a href="category.html?event=3x3" class="event-card">
-      <div class="event-title">3x3</div>
-      <img src="https://via.placeholder.com/100x100?text=3x3" alt="3x3 Cube" />
-    </a>
-    <a href="category.html?event=2x2" class="event-card">
-      <div class="event-title">2x2</div>
-      <img src="https://via.placeholder.com/100x100?text=2x2" alt="2x2 Cube" />
-    </a>
-    <a href="category.html?event=megaminx" class="event-card">
-      <div class="event-title">Megaminx</div>
-      <img src="https://via.placeholder.com/100x100?text=MGX" alt="Megaminx" />
-    </a>
-  </div>
+
+<!-- Dark mode toggle -->
+<div style="position: absolute; top: 20px; right: 20px;">
+  <button id="dark-mode-toggle" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer; font-size: 1.2rem;">
+    🌙
+  </button>
+</div>
+
+<!-- Google Sign-In buttons -->
+<div style="position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;">
+  <button id="googleSignIn" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #4285F4; color: white; cursor: pointer;">
+    Sign in with Google
+  </button>
+  <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
+    Sign out
+  </button>
+  <span id="userName" style="color: white; font-weight: bold;"></span>
+</div>
+
+<h1>Cube Timer</h1>
+<div class="event-grid">
+  <a href="category.html?event=3x3" class="event-card">
+    <div class="event-title">3x3</div>
+    <img src="images/3x3 image.png" alt="3x3 Cube" />
+  </a>
+  <a href="category.html?event=2x2" class="event-card">
+    <div class="event-title">2x2</div>
+    <img src="images/2x2 image.png" alt="2x2 Cube" />
+  </a>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-analytics.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
+
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
+    authDomain: "algdrill.firebaseapp.com",
+    projectId: "algdrill",
+    storageBucket: "algdrill.firebasestorage.app",
+    messagingSenderId: "612013160",
+    appId: "1:612013160:web:d664a05d36f71cf2c0d7dd",
+    measurementId: "G-FKCJTNPWW2"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+  const db = getFirestore(app);
+
+  // Elements
+  const signInBtn = document.getElementById('googleSignIn');
+  const signOutBtn = document.getElementById('signOut');
+  const userNameSpan = document.getElementById('userName');
+
+  // Data
+  let userCustomAlts = {};
+  let savedStatuses = {};
+
+  // Sign in with Google
+  signInBtn.addEventListener('click', async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log('Signed in as', user.displayName);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
+  // Sign out
+  signOutBtn.addEventListener('click', () => {
+    signOut(auth);
+  });
+
+  // Load user data
+  async function loadUserData(user) {
+    const docRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      userCustomAlts = data.customAlts || {};
+      savedStatuses = data.statuses || {};
+    } else {
+      userCustomAlts = {};
+      savedStatuses = {};
+      await setDoc(docRef, { customAlts: {}, statuses: {} });
+    }
+    console.log('User data loaded:', userCustomAlts, savedStatuses);
+  }
+
+  // Save user data
+  async function saveUserData(user) {
+    await setDoc(doc(db, "users", user.uid), {
+      customAlts: userCustomAlts,
+      statuses: savedStatuses
+    });
+    console.log('User data saved');
+  }
+
+  // Track login state
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      signInBtn.style.display = 'none';
+      signOutBtn.style.display = 'inline-block';
+      userNameSpan.textContent = `Hello, ${user.displayName}`;
+      await loadUserData(user);
+    } else {
+      signInBtn.style.display = 'inline-block';
+      signOutBtn.style.display = 'none';
+      userNameSpan.textContent = '';
+      userCustomAlts = {};
+      savedStatuses = {};
+    }
+  });
+</script>
+
 </body>
 </html>

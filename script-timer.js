@@ -50,57 +50,53 @@ function reverseAlg(alg) {
     .join(' ');
 }
 
+// === UPDATED setScramble() ===
 function setScramble() {
   const allAlgs = allAlgorithms[event]?.[type] || [];
-  
-  // Load filter settings from localStorage
+
   const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
-  const filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
-  
-  // Load saved statuses and apply them
+  const filterStatuses = new Set(
+    JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+  );
+
   const STATUS_STORAGE_KEY = 'algStatuses';
   const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
-  
-  // Apply saved statuses to algorithms
+
   allAlgs.forEach(alg => {
     const statusKey = `${event}_${type}_${alg.name}`;
     if (savedStatuses[statusKey]) {
       alg.status = savedStatuses[statusKey];
     }
   });
-  
-  // Filter algorithms based on current filter settings
+
   const filteredAlgs = allAlgs.filter(alg => filterStatuses.has(alg.status));
-  
+
   if (filteredAlgs.length === 0) {
     currentScramble = generateScramble();
   } else {
     const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
     currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
   }
+
   scrambleDiv.textContent = currentScramble;
 }
+// ===============================
 
 function setupFilters() {
   const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
-  
+
   checkboxes.forEach(cb => {
-    // Restore checkbox state from localStorage
     const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
-    const filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
+    const filterStatuses = new Set(
+      JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+    );
     cb.checked = filterStatuses.has(cb.value);
-    
+
     cb.addEventListener('change', () => {
-      // Update filter settings and save to localStorage
       const newFilterStatuses = new Set(
-        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
-          el => el.value
-        )
+        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
       );
-      
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(newFilterStatuses)));
-      
-      // Generate new scramble with updated filters
       setScramble();
     });
   });
@@ -156,11 +152,8 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('keyup', (e) => {
   if (e.code === 'Space') {
-    if (!isRunning) {
-      startTimer();
-    } else {
-      stopTimer();
-    }
+    if (!isRunning) startTimer();
+    else stopTimer();
     spaceHeld = false;
     timerDisplay.style.color = '';
   }

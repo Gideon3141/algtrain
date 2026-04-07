@@ -45,6 +45,13 @@
     </nav>
   </header>
 
+  <!-- Google Sign-In area -->
+  <div id="login-div" style="margin:10px;">
+    <button id="googleSignIn">Sign in with Google</button>
+    <button id="signOut" style="display:none;">Sign Out</button>
+    <span id="userName" style="margin-left:10px; font-weight:bold;"></span>
+  </div>
+
   <button id="filters-toggle" class="filters-toggle">Filters ▼</button>
 
   <div class="filters">
@@ -59,6 +66,59 @@
 
   <script src="dark-mode.js"></script>
   <script type="module" src="script-algs.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
+      authDomain: "algdrill.firebaseapp.com",
+      projectId: "algdrill",
+      storageBucket: "algdrill.firebasestorage.app",
+      messagingSenderId: "612013160",
+      appId: "1:612013160:web:d664a05d36f71cf2c0d7dd",
+      measurementId: "G-FKCJTNPWW2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    const signInBtn = document.getElementById('googleSignIn');
+    const signOutBtn = document.getElementById('signOut');
+    const userNameSpan = document.getElementById('userName');
+
+    signInBtn.addEventListener('click', async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
+        console.log('Signed in as', user.displayName);
+      } catch (err) { console.error(err); }
+    });
+
+    signOutBtn.addEventListener('click', () => signOut(auth));
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        signInBtn.style.display = 'none';
+        signOutBtn.style.display = 'inline-block';
+        userNameSpan.textContent = `Hello, ${user.displayName}`;
+        // Load user data from Firestore
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+          await setDoc(docRef, { customAlts: {}, statuses: {} });
+        }
+      } else {
+        signInBtn.style.display = 'inline-block';
+        signOutBtn.style.display = 'none';
+        userNameSpan.textContent = '';
+      }
+    });
+  </script>
+
   <script>
     const filtersToggle = document.getElementById('filters-toggle');
     const filtersDiv = document.querySelector('.filters');

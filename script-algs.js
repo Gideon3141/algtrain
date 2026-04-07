@@ -12,11 +12,9 @@ const toTimerBtn = document.getElementById('to-timer');
 const toAlgsBtn = document.getElementById('to-algs');
 const homeBtn = document.getElementById('home-button');
 
-// Load algorithms and apply saved statuses
 const algs = allAlgorithms[event]?.[type] || [];
 const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
 
-// Apply saved statuses to algorithms
 algs.forEach(alg => {
   const statusKey = `${event}_${type}_${alg.name}`;
   if (savedStatuses[statusKey]) {
@@ -27,7 +25,7 @@ algs.forEach(alg => {
 const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
 let filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
 
-let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || {});
 
 function saveUserCustomAlts() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(userCustomAlts));
@@ -38,23 +36,23 @@ function saveAlgStatus(algName, status) {
   const statusKey = `${event}_${type}_${algName}`;
   savedStatuses[statusKey] = status;
   localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(savedStatuses));
-  console.log(`Saved status for ${algName}:`, status);
 }
 
 function renderAlgs() {
   algListDiv.innerHTML = '';
-  
-  // Show all algorithms regardless of filter settings
+
   algs.forEach(alg => {
+    if (!filterStatuses.has(alg.status)) return;
+
     const card = document.createElement('div');
     card.className = 'alg-card';
 
+    // --- Name and status ---
     const nameDiv = document.createElement('div');
     nameDiv.className = 'alg-name';
 
     const statusCircle = document.createElement('span');
     statusCircle.className = 'status-indicator';
-
     if (alg.status === 'not learnt') statusCircle.classList.add('status-blank');
     else if (alg.status === 'learning') statusCircle.classList.add('status-learning');
     else if (alg.status === 'complete') statusCircle.classList.add('status-learned');
@@ -64,8 +62,6 @@ function renderAlgs() {
       if (alg.status === 'not learnt') alg.status = 'learning';
       else if (alg.status === 'learning') alg.status = 'complete';
       else alg.status = 'not learnt';
-      
-      // Save the status change to localStorage
       saveAlgStatus(alg.name, alg.status);
       renderAlgs();
     });
@@ -74,11 +70,14 @@ function renderAlgs() {
     nameDiv.prepend(statusCircle);
     card.appendChild(nameDiv);
 
+    // --- Main algorithm display ---
     const mainAlg = document.createElement('div');
     mainAlg.textContent = alg.alg;
+    mainAlg.style.marginTop = '8px';
     card.appendChild(mainAlg);
 
-    if (alg.image) {
+    // --- Image ---
+    if (alg.image && type !== 'OLL') {
       const img = document.createElement('img');
       img.src = alg.image;
       img.alt = alg.name;
@@ -86,49 +85,44 @@ function renderAlgs() {
       card.appendChild(img);
     }
 
-    const hasDefaultAlts = alg.alternates && alg.alternates.length > 0;
-    const hasUserAlts = userCustomAlts[alg.name] && userCustomAlts[alg.name].length > 0;
+    // --- Collapsible dropdown for custom alternates only ---
+    const customAlts = userCustomAlts[alg.name] ? [...userCustomAlts[alg.name]] : [];
 
-    if (hasDefaultAlts || hasUserAlts) {
-      const toggle = document.createElement('div');
-      toggle.className = 'toggle-arrow';
-      toggle.textContent = '▶ Show alternates';
-      toggle.style.userSelect = 'none';
+    if (customAlts.length > 0) {
+      const dropdownToggle = document.createElement('button');
+      dropdownToggle.textContent = '▶ Show alternates';
+      dropdownToggle.style.marginTop = '8px';
+      dropdownToggle.style.padding = '4px 8px';
+      dropdownToggle.style.border = 'none';
+      dropdownToggle.style.borderRadius = '6px';
+      dropdownToggle.style.backgroundColor = '#444';
+      dropdownToggle.style.color = '#fff';
+      dropdownToggle.style.cursor = 'pointer';
+      card.appendChild(dropdownToggle);
 
       const altList = document.createElement('div');
       altList.style.display = 'none';
-      altList.style.marginTop = '8px';
+      altList.style.flexDirection = 'column';
+      altList.style.marginTop = '5px';
+      altList.style.gap = '5px';
 
-      if (hasDefaultAlts) {
-        alg.alternates.forEach(alt => {
-          const altDiv = document.createElement('div');
-          altDiv.textContent = alt;
-          altDiv.style.border = '1px solid #555';
-          altDiv.style.borderRadius = '10px';
-          altDiv.style.padding = '5px 8px';
-          altDiv.style.marginBottom = '5px';
-          altDiv.style.backgroundColor = '#2a2a2a';
-          altDiv.style.color = '#fff';
-          altList.appendChild(altDiv);
-        });
-      }
-
-      if (hasUserAlts) {
-        userCustomAlts[alg.name].forEach((alt, index) => {
-          const userAltDiv = document.createElement('div');
-          userAltDiv.style.border = '1px solid #555';
-          userAltDiv.style.borderRadius = '10px';
-          userAltDiv.style.padding = '5px 8px';
-          userAltDiv.style.marginBottom = '5px';
-          userAltDiv.style.backgroundColor = '#2a2a2a';
-          userAltDiv.style.color = '#fff';
-          userAltDiv.style.display = 'flex';
-          userAltDiv.style.justifyContent = 'space-between';
-          userAltDiv.style.alignItems = 'center';
+      function renderAltList() {
+        altList.innerHTML = '';
+        customAlts.forEach((alt, index) => {
+          const altRow = document.createElement('div');
+          altRow.style.display = 'flex';
+          altRow.style.justifyContent = 'space-between';
+          altRow.style.alignItems = 'center';
+          altRow.style.backgroundColor = '#2a2a2a';
+          altRow.style.color = '#fff';
+          altRow.style.border = '1px solid #555';
+          altRow.style.borderRadius = '10px';
+          altRow.style.padding = '5px 8px';
+          altRow.style.cursor = 'pointer';
 
           const altText = document.createElement('span');
           altText.textContent = alt;
-          userAltDiv.appendChild(altText);
+          altRow.appendChild(altText);
 
           const deleteBtn = document.createElement('button');
           deleteBtn.textContent = '×';
@@ -140,35 +134,44 @@ function renderAlgs() {
           deleteBtn.style.fontSize = '1.2rem';
           deleteBtn.style.lineHeight = '1';
           deleteBtn.style.padding = '0 6px';
-
-          deleteBtn.addEventListener('click', () => {
-            userCustomAlts[alg.name].splice(index, 1);
-            if (userCustomAlts[alg.name].length === 0) {
-              delete userCustomAlts[alg.name];
-            }
+          deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            customAlts.splice(index, 1);
+            userCustomAlts[alg.name] = customAlts.length > 0 ? customAlts : undefined;
             saveUserCustomAlts();
-            renderAlgs();
+            renderAltList();
+          });
+          altRow.appendChild(deleteBtn);
+
+          altRow.addEventListener('click', () => {
+            // Swap clicked alternate with default
+            const oldDefault = mainAlg.textContent;
+            mainAlg.textContent = alt;
+            customAlts[index] = oldDefault;
+            userCustomAlts[alg.name] = customAlts;
+            saveUserCustomAlts();
+            renderAltList();
           });
 
-          userAltDiv.appendChild(deleteBtn);
-          altList.appendChild(userAltDiv);
+          altList.appendChild(altRow);
         });
       }
 
-      toggle.addEventListener('click', () => {
+      renderAltList();
+      card.appendChild(altList);
+
+      dropdownToggle.addEventListener('click', () => {
         if (altList.style.display === 'none') {
-          altList.style.display = 'block';
-          toggle.textContent = '▼ Hide alternates';
+          altList.style.display = 'flex';
+          dropdownToggle.textContent = '▼ Hide alternates';
         } else {
           altList.style.display = 'none';
-          toggle.textContent = '▶ Show alternates';
+          dropdownToggle.textContent = '▶ Show alternates';
         }
       });
-
-      card.appendChild(toggle);
-      card.appendChild(altList);
     }
 
+    // --- Add new custom alternate ---
     const addAltDiv = document.createElement('div');
     addAltDiv.style.marginTop = '10px';
     addAltDiv.style.display = 'flex';
@@ -199,10 +202,8 @@ function renderAlgs() {
     addAltBtn.addEventListener('click', () => {
       const val = newAltInput.value.trim();
       if (!val) return alert('Please enter an algorithm.');
-
       if (!userCustomAlts[alg.name]) userCustomAlts[alg.name] = [];
       userCustomAlts[alg.name].push(val);
-      saveUserCustomAlts();
       newAltInput.value = '';
       renderAlgs();
     });
@@ -217,39 +218,23 @@ function renderAlgs() {
 
 function setupFilters() {
   const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
-  console.log('Setting up filters, found checkboxes:', checkboxes.length);
-  console.log('Current filterStatuses:', Array.from(filterStatuses));
-  
   checkboxes.forEach(cb => {
-    // Restore checkbox state from localStorage
     cb.checked = filterStatuses.has(cb.value);
-    console.log(`Checkbox ${cb.value} set to:`, cb.checked);
-    
     cb.addEventListener('change', () => {
-      // Update filterStatuses
       filterStatuses = new Set(
-        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(
-          el => el.value
-        )
+        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
       );
-      
-      // Save to localStorage
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(filterStatuses)));
-      console.log('Saved filters to localStorage:', Array.from(filterStatuses));
-      
       renderAlgs();
     });
   });
 }
 
-// Initialize everything when DOM is ready
 function initializeApp() {
-  console.log('Initializing app...');
   setupFilters();
   renderAlgs();
 }
 
-// Wait for DOM to be ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
