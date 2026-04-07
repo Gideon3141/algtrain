@@ -45,11 +45,14 @@
     </nav>
   </header>
 
-  <!-- Google Sign-In area -->
-  <div id="login-div" style="margin:10px;">
-    <button id="googleSignIn">Sign in with Google</button>
-    <button id="signOut" style="display:none;">Sign Out</button>
-    <span id="userName" style="margin-left:10px; font-weight:bold;"></span>
+  <div id="login-div" style="margin: 20px; display: flex; align-items: center; gap: 10px;">
+    <button id="googleSignIn" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #4285F4; color: white; cursor: pointer;">
+      Sign in with Google
+    </button>
+    <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
+      Sign out
+    </button>
+    <span id="userName" style="font-weight: bold;"></span>
   </div>
 
   <button id="filters-toggle" class="filters-toggle">Filters ▼</button>
@@ -66,10 +69,11 @@
 
   <script src="dark-mode.js"></script>
   <script type="module" src="script-algs.js"></script>
+
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -92,9 +96,7 @@
 
     signInBtn.addEventListener('click', async () => {
       try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-        console.log('Signed in as', user.displayName);
+        await signInWithPopup(auth, provider);
       } catch (err) { console.error(err); }
     });
 
@@ -105,16 +107,34 @@
         signInBtn.style.display = 'none';
         signOutBtn.style.display = 'inline-block';
         userNameSpan.textContent = `Hello, ${user.displayName}`;
+
         // Load user data from Firestore
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
+
+        let customAlts = {};
+        let statuses = {};
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          customAlts = data.customAlts || {};
+          statuses = data.statuses || {};
+        } else {
           await setDoc(docRef, { customAlts: {}, statuses: {} });
         }
+
+        // Save to localStorage so script-algs.js can use it!
+        localStorage.setItem('customAlts', JSON.stringify(customAlts));
+        localStorage.setItem('savedStatuses', JSON.stringify(statuses));
+
       } else {
         signInBtn.style.display = 'inline-block';
         signOutBtn.style.display = 'none';
         userNameSpan.textContent = '';
+
+        // Clear local storage on sign out
+        localStorage.removeItem('customAlts');
+        localStorage.removeItem('savedStatuses');
       }
     });
   </script>
