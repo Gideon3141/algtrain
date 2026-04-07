@@ -11,7 +11,6 @@
   <nav style="display: flex; justify-content: flex-start; gap: 10px; align-items: center; position: relative;">
     <button id="to-timer" disabled>Timer</button>
     <button id="to-algs">Algorithms</button>
-    <!-- Dark mode toggle and Home button on the right side -->
     <button id="dark-mode-toggle" style="margin-left: auto; margin-right: 10px; padding: 6px 12px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer;">
       🌙
     </button>
@@ -21,9 +20,18 @@
   </nav>
 </header>
 
+<div id="login-div" style="margin: 20px; display: flex; align-items: center; gap: 10px;">
+  <button id="googleSignIn" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #4285F4; color: white; cursor: pointer;">
+    Sign in with Google
+  </button>
+  <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
+    Sign out
+  </button>
+  <span id="userName" style="font-weight: bold; color: inherit;"></span>
+</div>
+
 <main>
   <div id="timer-container">
-    <!-- Filters -->
     <div class="filters" style="position: static; margin-bottom: 1rem; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
       <label style="display: flex; align-items: center; gap: 5px; background-color: #1e1e1e; padding: 8px 12px; border-radius: 10px; border: 1px solid #333; font-size: 0.9rem; color: white; min-height: 36px;">
         <input type="checkbox" value="not learnt" checked> Not Learnt
@@ -35,13 +43,11 @@
         <input type="checkbox" value="complete" checked> Complete
       </label>
     </div>
-    
-    <!-- Scramble display -->
+
     <div id="scramble" class="scramble" style="font-size: 1.5rem; color: #ccc; margin-bottom: 1rem; user-select: text;">
       Scramble: ...
     </div>
 
-    <!-- Timer display -->
     <div id="timer-display" style="font-size: 4rem; margin-bottom: 1rem; color: white;">0.00</div>
 
     <button id="start-stop-button">Start</button>
@@ -56,5 +62,74 @@
 
 <script src="dark-mode.js"></script>
 <script type="module" src="script-timer.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
+    authDomain: "algdrill.firebaseapp.com",
+    projectId: "algdrill",
+    storageBucket: "algdrill.firebasestorage.app",
+    messagingSenderId: "612013160",
+    appId: "1:612013160:web:d664a05d36f71cf2c0d7dd",
+    measurementId: "G-FKCJTNPWW2"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  const signInBtn = document.getElementById('googleSignIn');
+  const signOutBtn = document.getElementById('signOut');
+  const userNameSpan = document.getElementById('userName');
+
+  signInBtn.addEventListener('click', async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) { console.error(err); }
+  });
+
+  signOutBtn.addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      signInBtn.style.display = 'none';
+      signOutBtn.style.display = 'inline-block';
+      userNameSpan.textContent = `Hello, ${user.displayName}`;
+
+      // Load user data from Firestore
+      const docRef = doc(db, "users", user.uid);
+      const docSnap = await getDoc(docRef);
+
+      let customAlts = {};
+      let statuses = {};
+
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        customAlts = data.customAlts || {};
+        statuses = data.statuses || {};
+      } else {
+        await setDoc(docRef, { customAlts: {}, statuses: {} });
+      }
+
+      // Save to localStorage
+      localStorage.setItem('customAlts', JSON.stringify(customAlts));
+      localStorage.setItem('savedStatuses', JSON.stringify(statuses));
+
+    } else {
+      signInBtn.style.display = 'inline-block';
+      signOutBtn.style.display = 'none';
+      userNameSpan.textContent = '';
+
+      // Clear local storage on sign out
+      localStorage.removeItem('customAlts');
+      localStorage.removeItem('savedStatuses');
+    }
+  });
+</script>
 </body>
 </html>
