@@ -32,7 +32,7 @@
       }
     }
 
-    /* AUTH MODAL STYLES ADDED TO MATCH HOME */
+    /* AUTH MODAL STYLES */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0, 0, 0, 0.7); z-index: 999;
@@ -40,7 +40,7 @@
     .auth-modal {
       display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: #222; padding: 20px; border-radius: 12px; z-index: 1000;
-      flex-direction: column; gap: 12px; border: 1px solid #444; width: 300px;
+      flex-direction: column; gap: 12px; border: 1px solid #444; width: 300px; color: white;
     }
     .auth-input {
       padding: 10px; border-radius: 6px; border: 1px solid #555; background: #333; color: white;
@@ -69,17 +69,14 @@
     <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
       Sign out
     </button>
-    <span id="userName" style="font-weight: bold; color: white;"></span>
+    <span id="userName" style="font-weight: bold;"></span>
   </div>
 
   <div class="modal-overlay" id="modalOverlay"></div>
   <div class="auth-modal" id="authModal">
-    <h2 style="color: white; margin-top: 0; text-align: center;">Welcome</h2>
+    <h2 style="margin-top: 0; text-align: center;">Welcome</h2>
     <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">Sign in with Google</button>
-    <button id="microsoftSignIn" class="auth-btn" style="background-color: #2F2F2F; color: white; display: flex; align-items: center; justify-content: center; gap: 10px;">
-      <img src="https://authjs.dev/img/providers/microsoft.svg" width="18"> Sign in with Microsoft
-    </button>
-    <div style="color: #888; text-align: center; margin: 10px 0;">OR</div>
+    <div style="color: #888; text-align: center; margin: 5px 0;">OR</div>
     <input type="email" id="emailInput" class="auth-input" placeholder="Email">
     <input type="password" id="passwordInput" class="auth-input" placeholder="Password">
     <div style="display: flex; gap: 10px;">

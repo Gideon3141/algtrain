@@ -1,7 +1,7 @@
 import { allAlgorithms as localAlgs } from './algs.js';
 import { initializeApp as initFirebase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -16,7 +16,6 @@ const app = initFirebase(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-const microsoftProvider = new OAuthProvider('microsoft.com'); // ADDED
 
 const STORAGE_KEY = 'userCustomAlts';
 const STATUS_STORAGE_KEY = 'algStatuses';
@@ -39,20 +38,14 @@ const algListDiv = document.getElementById('alg-list');
 const filtersDiv = document.querySelector('.filters');
 const toTimerBtn = document.getElementById('to-timer');
 const homeBtn = document.getElementById('home-button');
-const signInBtn = document.getElementById('googleSignIn');
+
+// Modal and Auth Elements
+const openAuthModalBtn = document.getElementById('openAuthModalBtn');
 const signOutBtn = document.getElementById('signOut');
 const userNameSpan = document.getElementById('userName');
-
-// MODAL ELEMENTS
 const authModal = document.getElementById('authModal');
 const modalOverlay = document.getElementById('modalOverlay');
-const openAuthModalBtn = document.getElementById('openAuthModalBtn');
 const closeModalBtn = document.getElementById('closeModalBtn');
-const microsoftSignInBtn = document.getElementById('microsoftSignIn');
-const emailSignInBtn = document.getElementById('emailSignInBtn');
-const emailSignUpBtn = document.getElementById('emailSignUpBtn');
-const emailInput = document.getElementById('emailInput');
-const passwordInput = document.getElementById('passwordInput');
 const authErrorMsg = document.getElementById('authErrorMsg');
 
 let algs = []; 
@@ -291,13 +284,41 @@ function setupFilters() {
   });
 }
 
-// AUTH MODAL LOGIC
-function openModal() { authModal.style.display = 'flex'; modalOverlay.style.display = 'block'; if(authErrorMsg) authErrorMsg.textContent = ''; }
-function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
+// Auth Modal Listeners
+function closeModal() {
+  authModal.style.display = 'none';
+  modalOverlay.style.display = 'none';
+}
 
-if(openAuthModalBtn) openAuthModalBtn.addEventListener('click', openModal);
-if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-if(modalOverlay) modalOverlay.addEventListener('click', closeModal);
+if (openAuthModalBtn) {
+  openAuthModalBtn.addEventListener('click', () => {
+    authModal.style.display = 'flex';
+    modalOverlay.style.display = 'block';
+    authErrorMsg.textContent = '';
+  });
+}
+
+if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+if (modalOverlay) modalOverlay.addEventListener('click', closeModal);
+
+document.getElementById('googleSignIn').addEventListener('click', async () => {
+  try { await signInWithPopup(auth, provider); closeModal(); } 
+  catch (e) { authErrorMsg.textContent = e.message; }
+});
+
+document.getElementById('emailSignInBtn').addEventListener('click', async () => {
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passwordInput').value);
+    closeModal();
+  } catch (e) { authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
+});
+
+document.getElementById('emailSignUpBtn').addEventListener('click', async () => {
+  try {
+    await createUserWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passwordInput').value);
+    closeModal();
+  } catch (e) { authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
+});
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
@@ -317,16 +338,6 @@ onAuthStateChanged(auth, async (user) => {
     if (signOutBtn) signOutBtn.style.display = 'none';
     if (userNameSpan) userNameSpan.textContent = '';
   }
-});
-
-if (signInBtn) signInBtn.addEventListener('click', async () => { try { await signInWithPopup(auth, provider); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message; } });
-if (microsoftSignInBtn) microsoftSignInBtn.addEventListener('click', async () => { try { await signInWithPopup(auth, microsoftProvider); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message; } });
-
-if (emailSignInBtn) emailSignInBtn.addEventListener('click', async () => {
-    try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
-});
-if (emailSignUpBtn) emailSignUpBtn.addEventListener('click', async () => {
-    try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
 });
 
 if (signOutBtn) signOutBtn.addEventListener('click', () => signOut(auth));
