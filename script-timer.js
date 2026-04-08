@@ -21,6 +21,23 @@ let solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
 let currentScramble = '';
 let spaceHeld = false;
 
+// NEW: Save locally AND sync to Firebase
+function saveTimesLocallyAndToCloud() {
+  const storageKey = `${event}_${type}_times`;
+  localStorage.setItem(storageKey, JSON.stringify(solves));
+
+  // If the user is signed in, this function will exist and send it to Firestore
+  if (window.syncSolvesToFirebase) {
+    window.syncSolvesToFirebase(storageKey, solves);
+  }
+}
+
+// NEW: Reload times when Firebase finishes loading the user's profile
+window.reloadSolvesFromStorage = function() {
+  solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
+  renderHistory();
+};
+
 function generateScramble() {
   const moves = ["R", "L", "U", "D", "F", "B"];
   const modifiers = ["", "'", "2"];
@@ -50,7 +67,6 @@ function reverseAlg(alg) {
     .join(' ');
 }
 
-// === UPDATED setScramble() ===
 function setScramble() {
   const allAlgs = allAlgorithms[event]?.[type] || [];
 
@@ -80,7 +96,6 @@ function setScramble() {
 
   scrambleDiv.textContent = currentScramble;
 }
-// ===============================
 
 function setupFilters() {
   const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
@@ -124,7 +139,7 @@ function stopTimer() {
     scramble: currentScramble,
   });
 
-  localStorage.setItem(`${event}_${type}_times`, JSON.stringify(solves));
+  saveTimesLocallyAndToCloud(); // Save triggers here!
   renderHistory();
   setScramble();
   startStopBtn.textContent = "Start";
@@ -162,14 +177,14 @@ document.addEventListener('keyup', (e) => {
 deleteAllBtn.addEventListener('click', () => {
   if (confirm("Delete all recorded times?")) {
     solves = [];
-    localStorage.removeItem(`${event}_${type}_times`);
+    saveTimesLocallyAndToCloud(); // Save triggers here!
     renderHistory();
   }
 });
 
 function deleteSolve(index) {
   solves.splice(index, 1);
-  localStorage.setItem(`${event}_${type}_times`, JSON.stringify(solves));
+  saveTimesLocallyAndToCloud(); // Save triggers here!
   renderHistory();
 }
 

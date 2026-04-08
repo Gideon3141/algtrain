@@ -5,6 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cube Timer</title>
   <link rel="stylesheet" href="style-index.css" />
+  <style>
+    /* Modal Styles */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.7); z-index: 999;
+    }
+    .auth-modal {
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: #222; padding: 20px; border-radius: 12px; z-index: 1000;
+      flex-direction: column; gap: 12px; border: 1px solid #444; width: 300px;
+    }
+    .auth-input {
+      padding: 10px; border-radius: 6px; border: 1px solid #555; background: #333; color: white;
+    }
+    .auth-btn {
+      padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 <script src="dark-mode.js"></script>
@@ -16,13 +34,36 @@
 </div>
 
 <div style="position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;">
-  <button id="googleSignIn" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #4285F4; color: white; cursor: pointer;">
-    Sign in with Google
+  <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
+    Sign In / Sign Up
   </button>
-  <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
+  <button id="signOut" class="auth-btn" style="background-color: #f44336; color: white; display: none;">
     Sign out
   </button>
   <span id="userName" style="color: white; font-weight: bold;"></span>
+</div>
+
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="auth-modal" id="authModal">
+  <h2 style="color: white; margin-top: 0; text-align: center;">Welcome</h2>
+
+  <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">
+    Sign in with Google
+  </button>
+
+  <div style="color: #888; text-align: center; margin: 10px 0;">OR</div>
+
+  <input type="email" id="emailInput" class="auth-input" placeholder="Email">
+  <input type="password" id="passwordInput" class="auth-input" placeholder="Password">
+
+  <div style="display: flex; gap: 10px;">
+    <button id="emailSignInBtn" class="auth-btn" style="flex: 1; background-color: #2196F3; color: white;">Sign In</button>
+    <button id="emailSignUpBtn" class="auth-btn" style="flex: 1; background-color: #FF9800; color: white;">Sign Up</button>
+  </div>
+
+  <p id="authErrorMsg" style="color: #ff6b6b; font-size: 0.85rem; text-align: center; margin: 0; min-height: 20px;"></p>
+
+  <button id="closeModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 10px;">Cancel</button>
 </div>
 
 <h1>Cube Timer</h1>
@@ -39,11 +80,9 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // Firebase config
   const firebaseConfig = {
     apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
     authDomain: "algdrill.firebaseapp.com",
@@ -54,30 +93,71 @@
     measurementId: "G-FKCJTNPWW2"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
   const db = getFirestore(app);
 
   // Elements
-  const signInBtn = document.getElementById('googleSignIn');
+  const openAuthModalBtn = document.getElementById('openAuthModalBtn');
   const signOutBtn = document.getElementById('signOut');
   const userNameSpan = document.getElementById('userName');
 
-  // Data attached to window so other scripts can read them if needed
+  const authModal = document.getElementById('authModal');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const googleSignIn = document.getElementById('googleSignIn');
+  const emailSignInBtn = document.getElementById('emailSignInBtn');
+  const emailSignUpBtn = document.getElementById('emailSignUpBtn');
+  const emailInput = document.getElementById('emailInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const authErrorMsg = document.getElementById('authErrorMsg');
+
   window.userCustomAlts = {};
   window.savedStatuses = {};
 
-  // Sign in with Google
-  signInBtn.addEventListener('click', async () => {
+  // Modal logic
+  function openModal() {
+    authModal.style.display = 'flex';
+    modalOverlay.style.display = 'block';
+    authErrorMsg.textContent = '';
+  }
+  function closeModal() {
+    authModal.style.display = 'none';
+    modalOverlay.style.display = 'none';
+  }
+
+  openAuthModalBtn.addEventListener('click', openModal);
+  closeModalBtn.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', closeModal);
+
+  // Google Auth
+  googleSignIn.addEventListener('click', async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      console.log('Signed in as', user.displayName);
+      await signInWithPopup(auth, provider);
+      closeModal();
     } catch (error) {
-      console.error(error);
+      authErrorMsg.textContent = error.message;
+    }
+  });
+
+  // Email Sign Up
+  emailSignUpBtn.addEventListener('click', async () => {
+    try {
+      await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+      closeModal();
+    } catch (error) {
+      authErrorMsg.textContent = error.message.replace('Firebase: ', '');
+    }
+  });
+
+  // Email Sign In
+  emailSignInBtn.addEventListener('click', async () => {
+    try {
+      await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+      closeModal();
+    } catch (error) {
+      authErrorMsg.textContent = error.message.replace('Firebase: ', '');
     }
   });
 
@@ -99,43 +179,27 @@
       window.savedStatuses = {};
       await setDoc(docRef, { customAlts: {}, statuses: {} });
     }
-
-    // Save to local storage for use on other pages
     localStorage.setItem('customAlts', JSON.stringify(window.userCustomAlts));
     localStorage.setItem('savedStatuses', JSON.stringify(window.savedStatuses));
-
-    console.log('User data loaded:', window.userCustomAlts, window.savedStatuses);
-  }
-
-  // Save user data
-  async function saveUserData(user) {
-    await setDoc(doc(db, "users", user.uid), {
-      customAlts: window.userCustomAlts,
-      statuses: window.savedStatuses
-    });
-    console.log('User data saved');
   }
 
   // Track login state
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      signInBtn.style.display = 'none';
+      openAuthModalBtn.style.display = 'none';
       signOutBtn.style.display = 'inline-block';
-      userNameSpan.textContent = `Hello, ${user.displayName}`;
+      userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
       await loadUserData(user);
     } else {
-      signInBtn.style.display = 'inline-block';
+      openAuthModalBtn.style.display = 'inline-block';
       signOutBtn.style.display = 'none';
       userNameSpan.textContent = '';
       window.userCustomAlts = {};
       window.savedStatuses = {};
-
-      // Clear local storage on sign out
       localStorage.removeItem('customAlts');
       localStorage.removeItem('savedStatuses');
     }
   });
 </script>
-
 </body>
 </html>

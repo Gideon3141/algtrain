@@ -5,6 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Timer</title>
 <link rel="stylesheet" href="style-timer.css" />
+<style>
+  /* Modal Styles */
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7); z-index: 999;
+  }
+  .auth-modal {
+    display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #222; padding: 20px; border-radius: 12px; z-index: 1000;
+    flex-direction: column; gap: 12px; border: 1px solid #444; width: 300px;
+  }
+  .auth-input {
+    padding: 10px; border-radius: 6px; border: 1px solid #555; background: #333; color: white;
+  }
+  .auth-btn {
+    padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
+  }
+</style>
 </head>
 <body>
 <header>
@@ -21,13 +39,36 @@
 </header>
 
 <div id="login-div" style="margin: 20px; display: flex; align-items: center; gap: 10px;">
-  <button id="googleSignIn" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #4285F4; color: white; cursor: pointer;">
-    Sign in with Google
+  <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
+    Sign In / Sign Up
   </button>
-  <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
+  <button id="signOut" class="auth-btn" style="background-color: #f44336; color: white; display: none;">
     Sign out
   </button>
   <span id="userName" style="font-weight: bold; color: inherit;"></span>
+</div>
+
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="auth-modal" id="authModal">
+  <h2 style="color: white; margin-top: 0; text-align: center;">Welcome</h2>
+
+  <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">
+    Sign in with Google
+  </button>
+
+  <div style="color: #888; text-align: center; margin: 10px 0;">OR</div>
+
+  <input type="email" id="emailInput" class="auth-input" placeholder="Email">
+  <input type="password" id="passwordInput" class="auth-input" placeholder="Password">
+
+  <div style="display: flex; gap: 10px;">
+    <button id="emailSignInBtn" class="auth-btn" style="flex: 1; background-color: #2196F3; color: white;">Sign In</button>
+    <button id="emailSignUpBtn" class="auth-btn" style="flex: 1; background-color: #FF9800; color: white;">Sign Up</button>
+  </div>
+
+  <p id="authErrorMsg" style="color: #ff6b6b; font-size: 0.85rem; text-align: center; margin: 0; min-height: 20px;"></p>
+
+  <button id="closeModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 10px;">Cancel</button>
 </div>
 
 <main>
@@ -65,8 +106,8 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -80,54 +121,111 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
+  const db = getFirestore(app);
 
-  const signInBtn = document.getElementById('googleSignIn');
+  // Elements
+  const openAuthModalBtn = document.getElementById('openAuthModalBtn');
   const signOutBtn = document.getElementById('signOut');
   const userNameSpan = document.getElementById('userName');
 
-  signInBtn.addEventListener('click', async () => {
+  const authModal = document.getElementById('authModal');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const googleSignIn = document.getElementById('googleSignIn');
+  const emailSignInBtn = document.getElementById('emailSignInBtn');
+  const emailSignUpBtn = document.getElementById('emailSignUpBtn');
+  const emailInput = document.getElementById('emailInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const authErrorMsg = document.getElementById('authErrorMsg');
+
+  // Track the logged in user ID so script-timer.js can access it
+  window.currentUserUid = null;
+
+  // This function is called by script-timer.js to push times to Firestore
+  window.syncSolvesToFirebase = async function(storageKey, solvesArray) {
+    if (!window.currentUserUid) return;
+    const userRef = doc(db, "users", window.currentUserUid);
     try {
-      await signInWithPopup(auth, provider);
-    } catch (err) { console.error(err); }
+      await updateDoc(userRef, {
+        [`solves.${storageKey}`]: solvesArray
+      });
+    } catch (error) {
+      await setDoc(userRef, { solves: { [storageKey]: solvesArray } }, { merge: true });
+    }
+  };
+
+  // Modal logic
+  function openModal() {
+    authModal.style.display = 'flex';
+    modalOverlay.style.display = 'block';
+    authErrorMsg.textContent = '';
+  }
+  function closeModal() {
+    authModal.style.display = 'none';
+    modalOverlay.style.display = 'none';
+  }
+
+  openAuthModalBtn.addEventListener('click', openModal);
+  closeModalBtn.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', closeModal);
+
+  // Auth Methods
+  googleSignIn.addEventListener('click', async () => {
+    try { await signInWithPopup(auth, provider); closeModal(); } 
+    catch (error) { authErrorMsg.textContent = error.message; }
   });
 
-  signOutBtn.addEventListener('click', () => signOut(auth));
+  emailSignUpBtn.addEventListener('click', async () => {
+    try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } 
+    catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); }
+  });
 
+  emailSignInBtn.addEventListener('click', async () => {
+    try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } 
+    catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); }
+  });
+
+  signOutBtn.addEventListener('click', () => { signOut(auth); });
+
+  // Load user data (including Solves!)
+  async function loadUserData(user) {
+    const docRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      localStorage.setItem('customAlts', JSON.stringify(data.customAlts || {}));
+      localStorage.setItem('savedStatuses', JSON.stringify(data.statuses || {}));
+
+      // Load all timer solves saved in the cloud
+      if (data.solves) {
+        for (const key in data.solves) {
+          localStorage.setItem(key, JSON.stringify(data.solves[key]));
+        }
+      }
+    } else {
+      await setDoc(docRef, { customAlts: {}, statuses: {}, solves: {} });
+    }
+
+    // Tell script-timer.js to instantly refresh the history panel!
+    if (window.reloadSolvesFromStorage) {
+      window.reloadSolvesFromStorage();
+    }
+  }
+
+  // Track login state
   onAuthStateChanged(auth, async (user) => {
     if (user) {
-      signInBtn.style.display = 'none';
+      window.currentUserUid = user.uid;
+      openAuthModalBtn.style.display = 'none';
       signOutBtn.style.display = 'inline-block';
-      userNameSpan.textContent = `Hello, ${user.displayName}`;
-
-      // Load user data from Firestore
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-
-      let customAlts = {};
-      let statuses = {};
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        customAlts = data.customAlts || {};
-        statuses = data.statuses || {};
-      } else {
-        await setDoc(docRef, { customAlts: {}, statuses: {} });
-      }
-
-      // Save to localStorage
-      localStorage.setItem('customAlts', JSON.stringify(customAlts));
-      localStorage.setItem('savedStatuses', JSON.stringify(statuses));
-
+      userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
+      await loadUserData(user);
     } else {
-      signInBtn.style.display = 'inline-block';
+      window.currentUserUid = null;
+      openAuthModalBtn.style.display = 'inline-block';
       signOutBtn.style.display = 'none';
       userNameSpan.textContent = '';
-
-      // Clear local storage on sign out
-      localStorage.removeItem('customAlts');
-      localStorage.removeItem('savedStatuses');
     }
   });
 </script>
