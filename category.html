@@ -21,20 +21,35 @@
     .auth-btn {
       padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
     }
-    /* Dynamic Grid Layout */
+    
+    /* Centered Grid Layout Fix */
     .event-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center; /* Centers cards horizontally */
+      align-items: flex-start;
+      gap: 30px; /* Consistent space between cards */
+      padding: 40px 20px;
       max-width: 1200px;
       margin: 0 auto;
     }
+
     .event-card {
       cursor: pointer;
       text-align: center;
       transition: transform 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 250px; /* Fixed size to prevent overlapping */
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: 20px;
+      border: 2px solid var(--border-color);
+      color: var(--text-primary);
     }
+
     .event-card:hover {
       transform: scale(1.05);
     }
@@ -81,7 +96,7 @@
   </div>
 
   <main>
-    <h1 id="page-title">Select a Category</h1>
+    <h1 id="page-title" style="text-align: center; margin-top: 60px;">Select a Category</h1>
     <div class="event-container" id="categoryGrid">
       <p style="color: white;">Loading categories...</p>
     </div>
@@ -114,7 +129,6 @@
 
     const categoryGrid = document.getElementById('categoryGrid');
 
-    // --- Dynamic Category Loader ---
     async function loadCategories() {
       categoryGrid.innerHTML = '';
       try {
@@ -122,12 +136,11 @@
         let foundAny = false;
 
         querySnapshot.forEach((doc) => {
-          // Check if document ID starts with "3x3_" or "2x2_"
           if (doc.id.startsWith(`${event}_`)) {
             foundAny = true;
             const type = doc.id.replace(`${event}_`, "");
             const data = doc.data();
-            const imgSrc = data.categoryImage || "images/OLL-3x3.png"; // Fallback image
+            const imgSrc = data.categoryImage || "images/OLL-3x3.png";
 
             const card = document.createElement('div');
             card.className = 'event-card';
@@ -150,7 +163,6 @@
       }
     }
 
-    // --- Auth Logic (Preserved) ---
     const openAuthModalBtn = document.getElementById('openAuthModalBtn');
     const signOutBtn = document.getElementById('signOut');
     const userNameSpan = document.getElementById('userName');
@@ -186,7 +198,6 @@
         signOutBtn.style.display = 'none';
         userNameSpan.textContent = '';
       }
-      // Load categories regardless of auth status
       loadCategories();
     });
 
