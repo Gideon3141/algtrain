@@ -1,4 +1,19 @@
-import { allAlgorithms } from './algs.js';
+import { allAlgorithms as localAlgs } from './algs.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
+  authDomain: "algdrill.firebaseapp.com",
+  projectId: "algdrill",
+  storageBucket: "algdrill.firebasestorage.app",
+  messagingSenderId: "612013160",
+  appId: "1:612013160:web:d664a05d36f71cf2c0d7dd"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 const STORAGE_KEY = 'userCustomAlts';
 const STATUS_STORAGE_KEY = 'algStatuses';
@@ -12,20 +27,32 @@ const toTimerBtn = document.getElementById('to-timer');
 const toAlgsBtn = document.getElementById('to-algs');
 const homeBtn = document.getElementById('home-button');
 
-const algs = allAlgorithms[event]?.[type] || [];
+let algs = []; // Will be populated by Cloud or Local
 const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
-
-algs.forEach(alg => {
-  const statusKey = `${event}_${type}_${alg.name}`;
-  if (savedStatuses[statusKey]) {
-    alg.status = savedStatuses[statusKey];
-  }
-});
-
 const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
 let filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
+let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
-let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || {});
+async function loadAlgs() {
+  try {
+    const docRef = doc(db, "global_algs", `${event}_${type}`);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      algs = docSnap.data().algs;
+    } else {
+      algs = localAlgs[event]?.[type] || [];
+    }
+  } catch (e) {
+    algs = localAlgs[event]?.[type] || [];
+  }
+
+  algs.forEach(alg => {
+    const statusKey = `${event}_${type}_${alg.name}`;
+    if (savedStatuses[statusKey]) alg.status = savedStatuses[statusKey];
+  });
+
+  renderAlgs();
+}
 
 function saveUserCustomAlts() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(userCustomAlts));
@@ -38,26 +65,23 @@ function saveAlgStatus(algName, status) {
   localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(savedStatuses));
 }
 
+// RESTORING YOUR ORIGINAL RENDER FUNCTION
 function renderAlgs() {
   algListDiv.innerHTML = '';
-
   algs.forEach(alg => {
     if (!filterStatuses.has(alg.status)) return;
-
     const card = document.createElement('div');
     card.className = 'alg-card';
 
-    // --- Name and status ---
     const nameDiv = document.createElement('div');
     nameDiv.className = 'alg-name';
-
     const statusCircle = document.createElement('span');
     statusCircle.className = 'status-indicator';
     if (alg.status === 'not learnt') statusCircle.classList.add('status-blank');
     else if (alg.status === 'learning') statusCircle.classList.add('status-learning');
     else if (alg.status === 'complete') statusCircle.classList.add('status-learned');
+
     statusCircle.style.cursor = 'pointer';
-    statusCircle.title = 'Click to change status';
     statusCircle.addEventListener('click', () => {
       if (alg.status === 'not learnt') alg.status = 'learning';
       else if (alg.status === 'learning') alg.status = 'complete';
@@ -70,24 +94,20 @@ function renderAlgs() {
     nameDiv.prepend(statusCircle);
     card.appendChild(nameDiv);
 
-    // --- Main algorithm display ---
     const mainAlg = document.createElement('div');
     mainAlg.textContent = alg.alg;
     mainAlg.style.marginTop = '8px';
     card.appendChild(mainAlg);
 
-    // --- Image ---
     if (alg.image && type !== 'OLL') {
       const img = document.createElement('img');
       img.src = alg.image;
-      img.alt = alg.name;
       img.className = 'alg-preview';
       card.appendChild(img);
     }
 
-    // --- Collapsible dropdown for custom alternates only ---
+    // --- YOUR CUSTOM ALTS LOGIC HERE ---
     const customAlts = userCustomAlts[alg.name] ? [...userCustomAlts[alg.name]] : [];
-
     if (customAlts.length > 0) {
       const dropdownToggle = document.createElement('button');
       dropdownToggle.textContent = '▶ Show alternates';
@@ -144,7 +164,6 @@ function renderAlgs() {
           altRow.appendChild(deleteBtn);
 
           altRow.addEventListener('click', () => {
-            // Swap clicked alternate with default
             const oldDefault = mainAlg.textContent;
             mainAlg.textContent = alt;
             customAlts[index] = oldDefault;
@@ -152,11 +171,9 @@ function renderAlgs() {
             saveUserCustomAlts();
             renderAltList();
           });
-
           altList.appendChild(altRow);
         });
       }
-
       renderAltList();
       card.appendChild(altList);
 
@@ -171,7 +188,6 @@ function renderAlgs() {
       });
     }
 
-    // --- Add new custom alternate ---
     const addAltDiv = document.createElement('div');
     addAltDiv.style.marginTop = '10px';
     addAltDiv.style.display = 'flex';
@@ -190,7 +206,6 @@ function renderAlgs() {
 
     const addAltBtn = document.createElement('button');
     addAltBtn.textContent = '+';
-    addAltBtn.title = 'Add custom alternate';
     addAltBtn.style.padding = '6px 12px';
     addAltBtn.style.borderRadius = '8px';
     addAltBtn.style.border = 'none';
@@ -201,7 +216,7 @@ function renderAlgs() {
 
     addAltBtn.addEventListener('click', () => {
       const val = newAltInput.value.trim();
-      if (!val) return alert('Please enter an algorithm.');
+      if (!val) return;
       if (!userCustomAlts[alg.name]) userCustomAlts[alg.name] = [];
       userCustomAlts[alg.name].push(val);
       newAltInput.value = '';
@@ -211,7 +226,6 @@ function renderAlgs() {
     addAltDiv.appendChild(newAltInput);
     addAltDiv.appendChild(addAltBtn);
     card.appendChild(addAltDiv);
-
     algListDiv.appendChild(card);
   });
 }
@@ -221,34 +235,15 @@ function setupFilters() {
   checkboxes.forEach(cb => {
     cb.checked = filterStatuses.has(cb.value);
     cb.addEventListener('change', () => {
-      filterStatuses = new Set(
-        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
-      );
+      filterStatuses = new Set(Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value));
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(filterStatuses)));
       renderAlgs();
     });
   });
 }
 
-function initializeApp() {
-  setupFilters();
-  renderAlgs();
-}
+loadAlgs();
+setupFilters();
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initializeApp);
-} else {
-  initializeApp();
-}
-
-toTimerBtn.addEventListener('click', () => {
-  window.location.href = `timer.html?event=${event}&type=${type}`;
-});
-
-toAlgsBtn.disabled = true;
-
-if (homeBtn) {
-  homeBtn.addEventListener('click', () => {
-    window.location.href = 'index.html';
-  });
-}
+toTimerBtn.addEventListener('click', () => { window.location.href = `timer.html?event=${event}&type=${type}`; });
+homeBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
