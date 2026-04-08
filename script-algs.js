@@ -35,8 +35,20 @@ const userNameSpan = document.getElementById('userName');
 let algs = []; 
 let currentUser = null;
 const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
-let filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
-let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || {});
+
+// Safety check to prevent the "object Object" crash
+function getInitialFilters() {
+  const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+  try {
+    if (!raw || raw === "[object Object]") return new Set(["not learnt", "learning", "complete"]);
+    return new Set(JSON.parse(raw));
+  } catch (e) {
+    return new Set(["not learnt", "learning", "complete"]);
+  }
+}
+
+let filterStatuses = getInitialFilters();
+let userCustomAlts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 
 async function startApp() {
   try {
@@ -51,7 +63,6 @@ async function startApp() {
     algs = localAlgs[event]?.[type] || [];
   }
 
-  // Load preferences
   algs.forEach(alg => {
     const prefKey = `pref_${event}_${type}_${alg.name}`;
     const userPreference = localStorage.getItem(prefKey);
@@ -61,11 +72,12 @@ async function startApp() {
   const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
   algs.forEach(alg => {
     const statusKey = `${event}_${type}_${alg.name}`;
-    alg.status = savedStatuses[statusKey] || 'not learnt';
+    if (savedStatuses[statusKey]) {
+      alg.status = savedStatuses[statusKey];
+    }
   });
 
-  setupFilters();
-  renderAlgs();
+  initializeApp(); 
 }
 
 function saveUserCustomAlts() {
@@ -73,15 +85,18 @@ function saveUserCustomAlts() {
 }
 
 async function saveAlgStatus(algName, status) {
-  const statusKey = `${event}_${type}_${algName}`;
   const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+  const statusKey = `${event}_${type}_${algName}`;
   savedStatuses[statusKey] = status;
   localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(savedStatuses));
 
   if (currentUser) {
     const userRef = doc(db, "users", currentUser.uid);
-    try { await updateDoc(userRef, { statuses: savedStatuses }); }
-    catch (e) { await setDoc(userRef, { statuses: savedStatuses }, { merge: true }); }
+    try {
+      await updateDoc(userRef, { statuses: savedStatuses });
+    } catch (e) {
+      await setDoc(userRef, { statuses: savedStatuses }, { merge: true });
+    }
   }
 }
 
@@ -95,30 +110,33 @@ function renderAlgs() {
     const card = document.createElement('div');
     card.className = 'alg-card';
 
-    // --- Name and status circle ---
     const nameDiv = document.createElement('div');
     nameDiv.className = 'alg-name';
+
     const statusCircle = document.createElement('span');
-    statusCircle.className = `status-indicator ${alg.status === 'not learnt' ? 'status-blank' : alg.status === 'learning' ? 'status-learning' : 'status-learned'}`;
+    statusCircle.className = 'status-indicator';
+    if (alg.status === 'not learnt') statusCircle.classList.add('status-blank');
+    else if (alg.status === 'learning') statusCircle.classList.add('status-learning');
+    else if (alg.status === 'complete') statusCircle.classList.add('status-learned');
     statusCircle.style.cursor = 'pointer';
-    statusCircle.title = 'Click to change status';
     statusCircle.addEventListener('click', async () => {
-      alg.status = alg.status === 'not learnt' ? 'learning' : alg.status === 'learning' ? 'complete' : 'not learnt';
+      if (alg.status === 'not learnt') alg.status = 'learning';
+      else if (alg.status === 'learning') alg.status = 'complete';
+      else alg.status = 'not learnt';
       await saveAlgStatus(alg.name, alg.status);
       renderAlgs();
     });
+
     nameDiv.textContent = alg.name;
     nameDiv.prepend(statusCircle);
     card.appendChild(nameDiv);
 
-    // --- Main Algorithm Header ---
     const mainAlg = document.createElement('div');
     mainAlg.textContent = alg.headerAlg; 
     mainAlg.style.marginTop = '8px';
     mainAlg.style.fontWeight = 'bold';
     card.appendChild(mainAlg);
 
-    // --- Image Logic ---
     if (alg.image) {
       const img = document.createElement('img');
       img.src = alg.image;
@@ -167,17 +185,18 @@ function renderAlgs() {
         altText.textContent = alt;
         altRow.appendChild(altText);
 
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '×';
+        deleteBtn.style.background = 'transparent';
+        deleteBtn.style.border = 'none';
+        deleteBtn.style.color = '#f55';
+        deleteBtn.style.fontWeight = 'bold';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.fontSize = '1.2rem';
+        deleteBtn.style.lineHeight = '1';
+        deleteBtn.style.padding = '0 6px';
+
         if (personalAlts.includes(alt)) {
-          const deleteBtn = document.createElement('button');
-          deleteBtn.textContent = '×';
-          deleteBtn.style.background = 'transparent';
-          deleteBtn.style.border = 'none';
-          deleteBtn.style.color = '#f55';
-          deleteBtn.style.fontWeight = 'bold';
-          deleteBtn.style.cursor = 'pointer';
-          deleteBtn.style.fontSize = '1.2rem';
-          deleteBtn.style.lineHeight = '1';
-          deleteBtn.style.padding = '0 6px';
           deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             userCustomAlts[alg.name] = personalAlts.filter(a => a !== alt);
@@ -192,6 +211,7 @@ function renderAlgs() {
           alg.headerAlg = alt; 
           renderAlgs(); 
         });
+
         altList.appendChild(altRow);
       });
 
@@ -203,7 +223,6 @@ function renderAlgs() {
       card.appendChild(altList);
     }
 
-    // --- Add New Custom Alternate ---
     const addAltDiv = document.createElement('div');
     addAltDiv.style.marginTop = '10px';
     addAltDiv.style.display = 'flex';
@@ -237,7 +256,6 @@ function renderAlgs() {
       if (!userCustomAlts[alg.name]) userCustomAlts[alg.name] = [];
       userCustomAlts[alg.name].push(val);
       saveUserCustomAlts();
-      // Auto-set as header
       localStorage.setItem(`pref_${event}_${type}_${alg.name}`, val);
       alg.headerAlg = val; 
       renderAlgs();
