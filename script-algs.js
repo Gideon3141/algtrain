@@ -24,14 +24,11 @@ const event = urlParams.get('event') || '3x3';
 const type = urlParams.get('type') || 'PLL';
 const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
 
-// --- THE NUCLEAR SAFETY CHECK ---
-// This runs immediately. If it finds corrupted data, it wipes it.
 (function clearCorruptedStorage() {
   const keys = [FILTER_STORAGE_KEY, STORAGE_KEY, STATUS_STORAGE_KEY];
   keys.forEach(key => {
     const data = localStorage.getItem(key);
     if (data === "[object Object]" || data === "undefined") {
-      console.warn("Corrupted data found for " + key + ". Resetting...");
       localStorage.removeItem(key);
     }
   });
@@ -48,7 +45,6 @@ const userNameSpan = document.getElementById('userName');
 let algs = []; 
 let currentUser = null;
 
-// Safe loading for filterStatuses
 function getInitialFilters() {
   const raw = localStorage.getItem(FILTER_STORAGE_KEY);
   try {
@@ -84,15 +80,11 @@ async function startApp() {
   const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
   algs.forEach(alg => {
     const statusKey = `${event}_${type}_${alg.name}`;
-    if (savedStatuses[statusKey]) {
-      alg.status = savedStatuses[statusKey];
-    } else {
-      alg.status = 'not learnt';
-    }
+    alg.status = savedStatuses[statusKey] || 'not learnt';
   });
 
-  setupFilters();
-  renderAlgs();
+  setupFilters(); // Replaced the broken line 80
+  renderAlgs();   // Replaced the broken line 80
 }
 
 function saveUserCustomAlts() {
@@ -100,18 +92,15 @@ function saveUserCustomAlts() {
 }
 
 async function saveAlgStatus(algName, status) {
-  const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
   const statusKey = `${event}_${type}_${algName}`;
+  const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
   savedStatuses[statusKey] = status;
   localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(savedStatuses));
 
   if (currentUser) {
     const userRef = doc(db, "users", currentUser.uid);
-    try {
-      await updateDoc(userRef, { statuses: savedStatuses });
-    } catch (e) {
-      await setDoc(userRef, { statuses: savedStatuses }, { merge: true });
-    }
+    try { await updateDoc(userRef, { statuses: savedStatuses }); }
+    catch (e) { await setDoc(userRef, { statuses: savedStatuses }, { merge: true }); }
   }
 }
 
@@ -127,21 +116,14 @@ function renderAlgs() {
 
     const nameDiv = document.createElement('div');
     nameDiv.className = 'alg-name';
-
     const statusCircle = document.createElement('span');
-    statusCircle.className = 'status-indicator';
-    if (alg.status === 'not learnt') statusCircle.classList.add('status-blank');
-    else if (alg.status === 'learning') statusCircle.classList.add('status-learning');
-    else if (alg.status === 'complete') statusCircle.classList.add('status-learned');
+    statusCircle.className = `status-indicator ${alg.status === 'not learnt' ? 'status-blank' : alg.status === 'learning' ? 'status-learning' : 'status-learned'}`;
     statusCircle.style.cursor = 'pointer';
     statusCircle.addEventListener('click', async () => {
-      if (alg.status === 'not learnt') alg.status = 'learning';
-      else if (alg.status === 'learning') alg.status = 'complete';
-      else alg.status = 'not learnt';
+      alg.status = alg.status === 'not learnt' ? 'learning' : alg.status === 'learning' ? 'complete' : 'not learnt';
       await saveAlgStatus(alg.name, alg.status);
       renderAlgs();
     });
-
     nameDiv.textContent = alg.name;
     nameDiv.prepend(statusCircle);
     card.appendChild(nameDiv);
@@ -226,7 +208,6 @@ function renderAlgs() {
           alg.headerAlg = alt; 
           renderAlgs(); 
         });
-
         altList.appendChild(altRow);
       });
 
