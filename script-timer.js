@@ -135,7 +135,7 @@ function stopTimer() {
 
   // --- THE FIX ---
   // We grab the EXACT string currently displayed on the screen.
-  // This prevents the case where math says 0.409 but the display rounded to 0.41.
+  // This ensures history matches the visual 0.01 display perfectly.
   const finalTimeText = timerDisplay.textContent;
 
   solves.unshift({
