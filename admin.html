@@ -60,8 +60,6 @@
             <button id="delete-cat-btn" class="delete-cat-btn">Delete Entire Category</button>
         </div>
       </div>
-      
-      <div class="footer-text" style="color:#666; font-size: 0.8rem; margin-top:20px; text-align: center;">Admin Panel v2.9 | Authorized Access Only</div>
     </div>
   </div>
 
@@ -102,13 +100,10 @@
       }
     });
 
-    // Fetches categories and filters them by the selected event (3x3/2x2)
     async function populateDropdown() {
         const selectedEvent = eventSelect.value;
         const querySnapshot = await getDocs(collection(db, "global_algs"));
-        
         typeDropdown.innerHTML = '<option value="">Select Existing...</option>';
-        
         querySnapshot.forEach((doc) => {
             if (doc.id.startsWith(`${selectedEvent}_`)) {
                 const opt = document.createElement('option');
@@ -121,10 +116,19 @@
 
     eventSelect.addEventListener('change', () => {
         populateDropdown();
+        currentAlgsList = []; // Safety Clear
         editorRows.innerHTML = '';
         controls.style.display = 'none';
         typeInput.value = '';
     });
+
+    function getActiveId() {
+        const dropdownVal = typeDropdown.value;
+        const manualVal = typeInput.value.trim();
+        if (dropdownVal && dropdownVal !== "") return dropdownVal;
+        if (manualVal) return `${eventSelect.value}_${manualVal}`;
+        return null;
+    }
 
     function renderEditor() {
       editorRows.innerHTML = '';
@@ -167,17 +171,20 @@
     }
 
     document.getElementById('load-algs-btn').addEventListener('click', async () => {
-      let fullId = typeDropdown.value || `${eventSelect.value}_${typeInput.value.trim()}`;
-      
-      if (!typeDropdown.value && !typeInput.value.trim()) return alert("Pick or type a category");
+      const fullId = getActiveId();
+      if (!fullId) return alert("Pick or type a category name first.");
 
       const docSnap = await getDoc(doc(db, "global_algs", fullId));
+      
+      // CRITICAL: Firewall - clear list before loading new data
+      currentAlgsList = []; 
+      
       if (docSnap.exists()) {
         currentAlgsList = docSnap.data().algs || [];
         catImageInput.value = docSnap.data().categoryImage || '';
       } else {
-        currentAlgsList = [];
         catImageInput.value = '';
+        alert("Empty/New category initialized.");
       }
       renderEditor();
       controls.style.display = 'flex';
@@ -190,24 +197,28 @@
     });
 
     document.getElementById('save-algs-btn').addEventListener('click', async () => {
-      let fullId = typeDropdown.value || `${eventSelect.value}_${typeInput.value.trim()}`;
+      const fullId = getActiveId();
+      if (!fullId) return alert("Missing category name.");
+      
       syncListFromInputs();
       try {
         await setDoc(doc(db, "global_algs", fullId), { 
             algs: currentAlgsList,
             categoryImage: catImageInput.value.trim() 
         });
-        alert("✅ Cloud Updated Successfully!");
+        alert("✅ Cloud Updated: " + fullId);
         populateDropdown();
       } catch (e) { alert("❌ Error: " + e.message); }
     });
 
     document.getElementById('delete-cat-btn').addEventListener('click', async () => {
-      let fullId = typeDropdown.value || `${eventSelect.value}_${typeInput.value.trim()}`;
-      if (confirm(`Are you sure you want to PERMANENTLY delete ${fullId}?`)) {
+      const fullId = getActiveId();
+      if (!fullId) return alert("Select a category to delete.");
+      
+      if (confirm(`PERMANENTLY delete ${fullId}?`)) {
           try {
               await deleteDoc(doc(db, "global_algs", fullId));
-              alert("Category deleted.");
+              alert("Deleted.");
               location.reload();
           } catch (e) { alert("Error: " + e.message); }
       }
