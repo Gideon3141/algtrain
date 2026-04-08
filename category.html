@@ -75,6 +75,9 @@
   <div class="auth-modal" id="authModal">
     <h2 style="color: white; margin-top: 0; text-align: center;">Welcome</h2>
     <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">Sign in with Google</button>
+    <button id="microsoftSignIn" class="auth-btn" style="background-color: #2F2F2F; color: white; display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <img src="https://authjs.dev/img/providers/microsoft.svg" width="18"> Sign in with Microsoft
+    </button>
     <div style="color: #888; text-align: center; margin: 10px 0;">OR</div>
     <input type="email" id="emailInput" class="auth-input" placeholder="Email">
     <input type="password" id="passwordInput" class="auth-input" placeholder="Password">
@@ -106,7 +109,7 @@
   
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -121,6 +124,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+    const microsoftProvider = new OAuthProvider('microsoft.com'); // ADDED
     const db = getFirestore(app);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -170,6 +174,7 @@
     const modalOverlay = document.getElementById('modalOverlay');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const googleSignIn = document.getElementById('googleSignIn');
+    const microsoftSignIn = document.getElementById('microsoftSignIn'); // ADDED
     const emailSignInBtn = document.getElementById('emailSignInBtn');
     const emailSignUpBtn = document.getElementById('emailSignUpBtn');
     const emailInput = document.getElementById('emailInput');
@@ -184,6 +189,10 @@
     modalOverlay.addEventListener('click', closeModal);
 
     googleSignIn.addEventListener('click', async () => { try { await signInWithPopup(auth, provider); closeModal(); } catch (error) { authErrorMsg.textContent = error.message; } });
+    
+    // ADDED MICROSOFT LOGIN LOGIC
+    microsoftSignIn.addEventListener('click', async () => { try { await signInWithPopup(auth, microsoftProvider); closeModal(); } catch (error) { authErrorMsg.textContent = error.message; } });
+
     emailSignUpBtn.addEventListener('click', async () => { try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
     emailSignInBtn.addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
     signOutBtn.addEventListener('click', () => { signOut(auth); });

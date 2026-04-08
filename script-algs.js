@@ -1,7 +1,7 @@
 import { allAlgorithms as localAlgs } from './algs.js';
 import { initializeApp as initFirebase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -16,6 +16,7 @@ const app = initFirebase(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const microsoftProvider = new OAuthProvider('microsoft.com'); // ADDED
 
 const STORAGE_KEY = 'userCustomAlts';
 const STATUS_STORAGE_KEY = 'algStatuses';
@@ -41,6 +42,18 @@ const homeBtn = document.getElementById('home-button');
 const signInBtn = document.getElementById('googleSignIn');
 const signOutBtn = document.getElementById('signOut');
 const userNameSpan = document.getElementById('userName');
+
+// MODAL ELEMENTS
+const authModal = document.getElementById('authModal');
+const modalOverlay = document.getElementById('modalOverlay');
+const openAuthModalBtn = document.getElementById('openAuthModalBtn');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const microsoftSignInBtn = document.getElementById('microsoftSignIn');
+const emailSignInBtn = document.getElementById('emailSignInBtn');
+const emailSignUpBtn = document.getElementById('emailSignUpBtn');
+const emailInput = document.getElementById('emailInput');
+const passwordInput = document.getElementById('passwordInput');
+const authErrorMsg = document.getElementById('authErrorMsg');
 
 let algs = []; 
 let currentUser = null;
@@ -278,12 +291,20 @@ function setupFilters() {
   });
 }
 
+// AUTH MODAL LOGIC
+function openModal() { authModal.style.display = 'flex'; modalOverlay.style.display = 'block'; if(authErrorMsg) authErrorMsg.textContent = ''; }
+function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
+
+if(openAuthModalBtn) openAuthModalBtn.addEventListener('click', openModal);
+if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+if(modalOverlay) modalOverlay.addEventListener('click', closeModal);
+
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user) {
-    if (signInBtn) signInBtn.style.display = 'none';
+    if (openAuthModalBtn) openAuthModalBtn.style.display = 'none';
     if (signOutBtn) signOutBtn.style.display = 'inline-block';
-    if (userNameSpan) userNameSpan.textContent = `Hello, ${user.displayName}`;
+    if (userNameSpan) userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
     const docSnap = await getDoc(doc(db, "users", user.uid));
     if (docSnap.exists() && docSnap.data().statuses) {
       localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(docSnap.data().statuses));
@@ -292,13 +313,22 @@ onAuthStateChanged(auth, async (user) => {
       renderAlgs(); 
     }
   } else {
-    if (signInBtn) signInBtn.style.display = 'inline-block';
+    if (openAuthModalBtn) openAuthModalBtn.style.display = 'inline-block';
     if (signOutBtn) signOutBtn.style.display = 'none';
     if (userNameSpan) userNameSpan.textContent = '';
   }
 });
 
-if (signInBtn) signInBtn.addEventListener('click', () => signInWithPopup(auth, provider));
+if (signInBtn) signInBtn.addEventListener('click', async () => { try { await signInWithPopup(auth, provider); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message; } });
+if (microsoftSignInBtn) microsoftSignInBtn.addEventListener('click', async () => { try { await signInWithPopup(auth, microsoftProvider); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message; } });
+
+if (emailSignInBtn) emailSignInBtn.addEventListener('click', async () => {
+    try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
+});
+if (emailSignUpBtn) emailSignUpBtn.addEventListener('click', async () => {
+    try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (e) { if(authErrorMsg) authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
+});
+
 if (signOutBtn) signOutBtn.addEventListener('click', () => signOut(auth));
 if (toTimerBtn) toTimerBtn.addEventListener('click', () => { window.location.href = `timer.html?event=${event}&type=${type}`; });
 if (homeBtn) homeBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
