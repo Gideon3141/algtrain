@@ -34,6 +34,8 @@
 </div>
 
 <div style="position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;">
+  <a href="admin.html" id="adminLink" style="display: none; background-color: #9c27b0; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-family: sans-serif;">Admin Panel</a>
+
   <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
     Sign In / Sign Up
   </button>
@@ -189,11 +191,21 @@
       openAuthModalBtn.style.display = 'none';
       signOutBtn.style.display = 'inline-block';
       userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
+
+      // SHOW ADMIN BUTTON IF IT'S YOU
+      if (user.uid === "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1") {
+        document.getElementById('adminLink').style.display = 'inline-block';
+      } else {
+        document.getElementById('adminLink').style.display = 'none';
+      }
+
       await loadUserData(user);
     } else {
       openAuthModalBtn.style.display = 'inline-block';
       signOutBtn.style.display = 'none';
       userNameSpan.textContent = '';
+      if(document.getElementById('adminLink')) document.getElementById('adminLink').style.display = 'none';
+
       window.userCustomAlts = {};
       window.savedStatuses = {};
       localStorage.removeItem('customAlts');
