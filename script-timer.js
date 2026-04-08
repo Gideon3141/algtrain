@@ -1,18 +1,4 @@
-import { allAlgorithms as localAlgs } from './algs.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
-  authDomain: "algdrill.firebaseapp.com",
-  projectId: "algdrill",
-  storageBucket: "algdrill.firebasestorage.app",
-  messagingSenderId: "612013160",
-  appId: "1:612013160:web:d664a05d36f71cf2c0d7dd"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { allAlgorithms } from './algs.js';
 
 const urlParams = new URLSearchParams(window.location.search);
 const event = urlParams.get('event') || '3x3';
@@ -34,73 +20,257 @@ let timerInterval;
 let solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
 let currentScramble = '';
 let spaceHeld = false;
-let algsForScramble = [];
 
-async function initTimer() {
-  try {
-    const docRef = doc(db, "global_algs", `${event}_${type}`);
-    const docSnap = await getDoc(docRef);
-    algsForScramble = docSnap.exists() ? docSnap.data().algs : (localAlgs[event]?.[type] || []);
-  } catch (e) {
-    algsForScramble = localAlgs[event]?.[type] || [];
-  }
-  setScramble();
-}
-
+// NEW: Save locally AND sync to Firebase
 function saveTimesLocallyAndToCloud() {
-  const storageKey = `${event}_${type}_times`;
-  localStorage.setItem(storageKey, JSON.stringify(solves));
-  if (window.syncSolvesToFirebase) window.syncSolvesToFirebase(storageKey, solves);
+const storageKey = `${event}_${type}_times`;
+localStorage.setItem(storageKey, JSON.stringify(solves));
+
+// If the user is signed in, this function will exist and send it to Firestore
+if (window.syncSolvesToFirebase) {
+window.syncSolvesToFirebase(storageKey, solves);
+}
 }
 
+// NEW: Reload times when Firebase finishes loading the user's profile
 window.reloadSolvesFromStorage = function() {
-  solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
-  renderHistory();
+solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
+renderHistory();
 };
 
 function generateScramble() {
-  const moves = ["R", "L", "U", "D", "F", "B"];
-  const modifiers = ["", "'", "2"];
-  let scramble = [];
-  let lastMove = "";
-  while (scramble.length < 20) {
-    let move = moves[Math.floor(Math.random() * moves.length)];
-    if (move === lastMove) continue;
-    lastMove = move;
-    scramble.push(move + modifiers[Math.floor(Math.random() * modifiers.length)]);
-  }
-  return scramble.join(" ");
+const moves = ["R", "L", "U", "D", "F", "B"];
+const modifiers = ["", "'", "2"];
+let scramble = [];
+let lastMove = "";
+
+while (scramble.length < 20) {
+let move = moves[Math.floor(Math.random() * moves.length)];
+if (move === lastMove) continue;
+lastMove = move;
+let modifier = modifiers[Math.floor(Math.random() * modifiers.length)];
+scramble.push(move + modifier);
+}
+
+return scramble.join(" ");
 }
 
 function reverseAlg(alg) {
-  return alg.split(' ').reverse().map(move => {
-    if (move.endsWith("'")) return move.slice(0, -1);
-    else if (move.endsWith("2")) return move;
-    else return move + "'";
-  }).join(' ');
+return alg
+.split(' ')
+.reverse()
+.map(move => {
+if (move.endsWith("'")) return move.slice(0, -1);
+else if (move.endsWith("2")) return move;
+else return move + "'";
+})
+.join(' ');
 }
 
 function setScramble() {
-  const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
-  const filterStatuses = new Set(JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]'));
-  const savedStatuses = JSON.parse(localStorage.getItem('savedStatuses') || '{}');
+const allAlgs = allAlgorithms[event]?.[type] || [];
 
-  const filteredAlgs = algsForScramble.filter(alg => {
-    const statusKey = `${event}_${type}_${alg.name}`;
-    const status = savedStatuses[statusKey] || 'not learnt';
-    return filterStatuses.has(status);
-  });
+const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+const filterStatuses = new Set(
+JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+);
 
-  if (filteredAlgs.length === 0) {
-    currentScramble = generateScramble();
-  } else {
-    const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
-    currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
-  }
-  scrambleDiv.textContent = currentScramble;
+const STATUS_STORAGE_KEY = 'algStatuses';
+const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+
+allAlgs.forEach(alg => {
+const statusKey = `${event}_${type}_${alg.name}`;
+if (savedStatuses[statusKey]) {
+alg.status = savedStatuses[statusKey];
+}
+});
+
+const filteredAlgs = allAlgs.filter(alg => filterStatuses.has(alg.status));
+
+if (filteredAlgs.length === 0) {
+currentScramble = generateScramble();
+} else {
+const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
+currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
 }
 
-// ... Rest of your existing Start/Stop/Render functions here ...
-// Just make sure you call initTimer() at the very bottom instead of just setScramble()
-initTimer();
+scrambleDiv.textContent = currentScramble;
+}
+
+function setupFilters() {
+const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
+
+checkboxes.forEach(cb => {
+const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+const filterStatuses = new Set(
+JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+);
+cb.checked = filterStatuses.has(cb.value);
+
+cb.addEventListener('change', () => {
+const newFilterStatuses = new Set(
+Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
+);
+localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(newFilterStatuses)));
+setScramble();
+});
+});
+}
+
+function startTimer() {
+isRunning = true;
+startTime = performance.now();
+timerInterval = setInterval(() => {
+const elapsed = (performance.now() - startTime) / 1000;
+timerDisplay.textContent = elapsed.toFixed(2);
+}, 10);
+startStopBtn.textContent = "Stop";
+timerDisplay.style.color = '';
+}
+
+function stopTimer() {
+isRunning = false;
+clearInterval(timerInterval);
+
+const finalTime = (performance.now() - startTime) / 1000;
+
+solves.unshift({
+time: finalTime,
+scramble: currentScramble,
+});
+
+saveTimesLocallyAndToCloud(); // Save triggers here!
+renderHistory();
+setScramble();
+startStopBtn.textContent = "Start";
+}
+
+startStopBtn.addEventListener('mousedown', () => {
+startStopBtn.style.backgroundColor = '#2f4';
+});
+
+startStopBtn.addEventListener('mouseup', () => {
+startStopBtn.style.backgroundColor = '';
+if (isRunning) stopTimer();
+else startTimer();
+});
+
+document.addEventListener('keydown', (e) => {
+if (e.code === 'Space') {
+if (!spaceHeld) {
+spaceHeld = true;
+timerDisplay.style.color = 'limegreen';
+}
+e.preventDefault();
+}
+});
+
+document.addEventListener('keyup', (e) => {
+if (e.code === 'Space') {
+if (!isRunning) startTimer();
+else stopTimer();
+spaceHeld = false;
+timerDisplay.style.color = '';
+}
+});
+
+deleteAllBtn.addEventListener('click', () => {
+if (confirm("Delete all recorded times?")) {
+solves = [];
+saveTimesLocallyAndToCloud(); // Save triggers here!
+renderHistory();
+}
+});
+
+function deleteSolve(index) {
+solves.splice(index, 1);
+saveTimesLocallyAndToCloud(); // Save triggers here!
+renderHistory();
+}
+
+function renderHistory() {
+historyList.innerHTML = '';
+solves.forEach((solve, index) => {
+const item = document.createElement('div');
+item.className = 'history-item';
+
+const solveNumber = solves.length - index;
+const circle = document.createElement('span');
+circle.textContent = solveNumber;
+circle.style.display = 'inline-block';
+circle.style.width = '24px';
+circle.style.height = '24px';
+circle.style.borderRadius = '50%';
+circle.style.border = '2px solid white';
+circle.style.textAlign = 'center';
+circle.style.marginRight = '10px';
+circle.style.fontSize = '0.9rem';
+circle.style.lineHeight = '22px';
+
+item.appendChild(circle);
+item.append(` ${parseFloat(solve.time).toFixed(2)}s`);
+
+item.addEventListener('click', () => {
+showDetail(index);
+});
+
+historyList.appendChild(item);
+});
+
+historyList.scrollTop = 0;
+
+if (solves.length > 0) {
+const avg =
+solves.reduce((sum, s) => sum + parseFloat(s.time), 0) / solves.length;
+averageTimeDiv.textContent = `Average: ${avg.toFixed(2)}s`;
+} else {
+averageTimeDiv.textContent = 'Average: N/A';
+}
+}
+
+function showDetail(index) {
+const solve = solves[index];
+historyList.innerHTML = '';
+
+const detail = document.createElement('div');
+detail.className = 'history-item selected';
+
+const content = document.createElement('div');
+content.innerHTML = `
+<em>${solve.scramble}</em><br>
+`;
+detail.appendChild(content);
+
+const deleteBtn = document.createElement('button');
+deleteBtn.className = 'delete-time-btn';
+deleteBtn.innerHTML = '🗑️';
+deleteBtn.addEventListener('click', () => deleteSolve(index));
+detail.appendChild(deleteBtn);
+
+historyList.appendChild(detail);
+
+const backBtn = document.createElement('button');
+backBtn.textContent = '← Back to History';
+backBtn.style.marginTop = '10px';
+backBtn.style.padding = '8px 12px';
+backBtn.style.borderRadius = '10px';
+backBtn.style.border = 'none';
+backBtn.style.cursor = 'pointer';
+backBtn.style.background = '#333';
+backBtn.style.color = 'white';
+
+backBtn.addEventListener('click', renderHistory);
+historyList.appendChild(backBtn);
+}
+
+toAlgsBtn.addEventListener('click', () => {
+window.location.href = `algs.html?event=${event}&type=${type}`;
+});
+
+homeBtn.addEventListener('click', () => {
+window.location.href = 'index.html';
+});
+
+setupFilters();
+setScramble();
 renderHistory();

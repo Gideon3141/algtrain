@@ -6,63 +6,48 @@
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="style-index.css" />
   <style>
-    .admin-container { background: #222; padding: 30px; border-radius: 12px; max-width: 800px; margin: 20px auto; border: 1px solid #444; color: white; }
+    .admin-container { background: #222; padding: 30px; border-radius: 12px; max-width: 1100px; margin: 20px auto; border: 1px solid #444; color: white; }
     .alg-edit-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .alg-edit-row input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; }
+    .alg-edit-row input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; min-width: 0; }
     select { padding: 8px; border-radius: 4px; background: #333; color: white; margin-bottom: 20px; }
     button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
     .save-btn { background-color: #4CAF50; color: white; }
     .migrate-btn { background-color: #FF9800; color: white; margin-bottom: 20px; }
+    .nav-btn { background-color: #555; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; }
   </style>
 </head>
 <body>
   <div style="padding: 20px; text-align: center;">
-    <h1>Secret Admin Panel</h1>
+    <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 10px;">
+       <a href="index.html" class="nav-btn">Home</a>
+       <h1>Secret Admin Panel</h1>
+    </div>
     <div id="loading">Checking permissions...</div>
     <div id="access-denied" style="color: #f44336; display: none; font-size: 1.5rem;">Access Denied.</div>
-
     <div id="admin-panel" style="display: none;">
-
       <div class="admin-container">
-        <h2>1. Initial Migration</h2>
-        <p>Only click this if you haven't moved your local algs to the cloud yet.</p>
+        <h2>1. Migration</h2>
         <button id="migrate-btn" class="migrate-btn">Upload Local Algs to Cloud</button>
         <p id="migrate-status"></p>
       </div>
-
       <div class="admin-container">
         <h2>2. Algorithm Editor</h2>
         <div style="margin-bottom: 10px;">
-          <select id="event-select">
-            <option value="3x3">3x3</option>
-            <option value="2x2">2x2</option>
-          </select>
-          <select id="type-select">
-            <option value="PLL">PLL</option>
-            <option value="OLL">OLL</option>
-          </select>
+          <select id="event-select"><option value="3x3">3x3</option><option value="2x2">2x2</option></select>
+          <select id="type-select"><option value="PLL">PLL</option><option value="OLL">OLL</option></select>
           <button id="load-algs-btn" style="background-color: #2196F3; color: white;">Load Algorithms</button>
         </div>
-
-        <div id="editor-rows">
-          </div>
-
+        <div id="editor-rows"></div>
         <button id="save-algs-btn" class="save-btn" style="display: none; margin-top: 20px;">Save Changes to Cloud</button>
         <p id="save-status"></p>
       </div>
-
-      <div style="margin-top: 30px;">
-        <a href="index.html" style="color: #2196F3; text-decoration: none;">&larr; Back to Home</a>
-      </div>
     </div>
   </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { allAlgorithms } from "./algs.js";
-
     const firebaseConfig = {
       apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
       authDomain: "algdrill.firebaseapp.com",
@@ -71,24 +56,16 @@
       messagingSenderId: "612013160",
       appId: "1:612013160:web:d664a05d36f71cf2c0d7dd"
     };
-
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-
     const ADMIN_UID = "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1";
     let currentAlgsList = [];
-
     onAuthStateChanged(auth, (user) => {
       document.getElementById('loading').style.display = 'none';
-      if (user && user.uid === ADMIN_UID) {
-        document.getElementById('admin-panel').style.display = 'block';
-      } else {
-        document.getElementById('access-denied').style.display = 'block';
-      }
+      if (user && user.uid === ADMIN_UID) document.getElementById('admin-panel').style.display = 'block';
+      else document.getElementById('access-denied').style.display = 'block';
     });
-
-    // MIGRATION LOGIC
     document.getElementById('migrate-btn').addEventListener('click', async () => {
       const status = document.getElementById('migrate-status');
       try {
@@ -100,16 +77,12 @@
         status.textContent = "✅ Migration Successful!";
       } catch (e) { status.textContent = "❌ Error: " + e.message; }
     });
-
-    // EDITOR LOGIC
     const editorRows = document.getElementById('editor-rows');
     const saveBtn = document.getElementById('save-algs-btn');
-
     document.getElementById('load-algs-btn').addEventListener('click', async () => {
       const event = document.getElementById('event-select').value;
       const type = document.getElementById('type-select').value;
       const docSnap = await getDoc(doc(db, "global_algs", `${event}_${type}`));
-
       editorRows.innerHTML = '';
       if (docSnap.exists()) {
         currentAlgsList = docSnap.data().algs;
@@ -118,29 +91,29 @@
           row.className = 'alg-edit-row';
           row.innerHTML = `
             <span>${index + 1}.</span>
-            <input type="text" value="${alg.name}" data-field="name" data-index="${index}">
-            <input type="text" value="${alg.alg}" data-field="alg" data-index="${index}">
+            <input type="text" value="${alg.name || ''}" data-field="name" data-index="${index}" placeholder="Name">
+            <input type="text" value="${alg.alg || ''}" data-field="alg" data-index="${index}" placeholder="Main Alg">
+            <input type="text" value="${alg.alternates ? alg.alternates.join(', ') : ''}" data-field="alternates" data-index="${index}" placeholder="Alts">
+            <input type="text" value="${alg.scrambles ? alg.scrambles.join(', ') : ''}" data-field="scrambles" data-index="${index}" placeholder="Scrambles">
+            <input type="text" value="${alg.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL">
           `;
           editorRows.appendChild(row);
         });
         saveBtn.style.display = 'inline-block';
-      } else {
-        editorRows.innerHTML = '<p>No algorithms found in database for this category.</p>';
       }
     });
-
     saveBtn.addEventListener('click', async () => {
       const event = document.getElementById('event-select').value;
       const type = document.getElementById('type-select').value;
       const status = document.getElementById('save-status');
-
       const inputs = editorRows.querySelectorAll('input');
       inputs.forEach(input => {
         const idx = input.dataset.index;
         const field = input.dataset.field;
-        currentAlgsList[idx][field] = input.value;
+        if (field === 'scrambles' || field === 'alternates') {
+          currentAlgsList[idx][field] = input.value.split(',').map(s => s.trim()).filter(s => s !== '');
+        } else currentAlgsList[idx][field] = input.value;
       });
-
       try {
         await setDoc(doc(db, "global_algs", `${event}_${type}`), { algs: currentAlgsList });
         status.textContent = "✅ Cloud Updated Successfully!";
