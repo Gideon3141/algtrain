@@ -8,12 +8,15 @@
   <style>
     .admin-container { background: #222; padding: 30px; border-radius: 12px; max-width: 1100px; margin: 20px auto; border: 1px solid #444; color: white; }
     .alg-edit-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .alg-edit-row input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; min-width: 0; }
-    select { padding: 8px; border-radius: 4px; background: #333; color: white; margin-bottom: 20px; }
-    button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+    .alg-edit-row input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; min-width: 0; transition: border 0.3s; }
+    .alg-edit-row input:focus { border-color: #2196F3; outline: none; }
+    select { padding: 8px; border-radius: 4px; background: #333; color: white; margin-bottom: 20px; border: 1px solid #444; }
+    button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
+    button:hover { opacity: 0.8; }
     .save-btn { background-color: #4CAF50; color: white; }
     .migrate-btn { background-color: #FF9800; color: white; margin-bottom: 20px; }
     .nav-btn { background-color: #555; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; }
+    .footer-text { margin-top: 40px; color: #666; font-size: 0.8rem; }
   </style>
 </head>
 <body>
@@ -22,14 +25,17 @@
        <a href="index.html" class="nav-btn">Home</a>
        <h1>Secret Admin Panel</h1>
     </div>
+    
     <div id="loading">Checking permissions...</div>
     <div id="access-denied" style="color: #f44336; display: none; font-size: 1.5rem;">Access Denied.</div>
+
     <div id="admin-panel" style="display: none;">
       <div class="admin-container">
         <h2>1. Migration</h2>
         <button id="migrate-btn" class="migrate-btn">Upload Local Algs to Cloud</button>
         <p id="migrate-status"></p>
       </div>
+
       <div class="admin-container">
         <h2>2. Algorithm Editor</h2>
         <div style="margin-bottom: 10px;">
@@ -41,13 +47,17 @@
         <button id="save-algs-btn" class="save-btn" style="display: none; margin-top: 20px;">Save Changes to Cloud</button>
         <p id="save-status"></p>
       </div>
+      
+      <div class="footer-text">Admin Panel v2.1 | System Online</div>
     </div>
   </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { allAlgorithms } from "./algs.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
       authDomain: "algdrill.firebaseapp.com",
@@ -56,16 +66,19 @@
       messagingSenderId: "612013160",
       appId: "1:612013160:web:d664a05d36f71cf2c0d7dd"
     };
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const ADMIN_UID = "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1";
     let currentAlgsList = [];
+
     onAuthStateChanged(auth, (user) => {
       document.getElementById('loading').style.display = 'none';
       if (user && user.uid === ADMIN_UID) document.getElementById('admin-panel').style.display = 'block';
       else document.getElementById('access-denied').style.display = 'block';
     });
+
     document.getElementById('migrate-btn').addEventListener('click', async () => {
       const status = document.getElementById('migrate-status');
       try {
@@ -77,8 +90,10 @@
         status.textContent = "✅ Migration Successful!";
       } catch (e) { status.textContent = "❌ Error: " + e.message; }
     });
+
     const editorRows = document.getElementById('editor-rows');
     const saveBtn = document.getElementById('save-algs-btn');
+
     document.getElementById('load-algs-btn').addEventListener('click', async () => {
       const event = document.getElementById('event-select').value;
       const type = document.getElementById('type-select').value;
@@ -102,6 +117,7 @@
         saveBtn.style.display = 'inline-block';
       }
     });
+
     saveBtn.addEventListener('click', async () => {
       const event = document.getElementById('event-select').value;
       const type = document.getElementById('type-select').value;
