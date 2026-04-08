@@ -7,16 +7,17 @@
   <link rel="stylesheet" href="style-index.css" />
   <style>
     .admin-container { background: #222; padding: 30px; border-radius: 12px; max-width: 1100px; margin: 20px auto; border: 1px solid #444; color: white; }
-    .alg-edit-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .alg-edit-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
     .alg-edit-row input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; min-width: 0; transition: border 0.3s; }
-    .alg-edit-row input:focus { border-color: #2196F3; outline: none; }
-    select { padding: 8px; border-radius: 4px; background: #333; color: white; margin-bottom: 20px; border: 1px solid #444; }
+    select, .text-input { padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444; }
     button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-    button:hover { opacity: 0.8; }
     .save-btn { background-color: #4CAF50; color: white; }
-    .migrate-btn { background-color: #FF9800; color: white; margin-bottom: 20px; }
+    .add-btn { background-color: #2196F3; color: white; }
+    .delete-btn { background-color: #f44336; color: white; padding: 5px 10px; }
+    .delete-cat-btn { background-color: #d32f2f; color: white; }
     .nav-btn { background-color: #555; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; }
-    .footer-text { margin-top: 40px; color: #666; font-size: 0.8rem; }
+    .control-bar { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #444; }
+    #loading { text-align: center; color: white; padding: 20px; }
   </style>
 </head>
 <body>
@@ -31,32 +32,43 @@
 
     <div id="admin-panel" style="display: none;">
       <div class="admin-container">
-        <h2>1. Migration</h2>
-        <button id="migrate-btn" class="migrate-btn">Upload Local Algs to Cloud</button>
-        <p id="migrate-status"></p>
+        <h2>1. Select Event & Category</h2>
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+          <select id="event-select">
+              <option value="3x3">3x3</option>
+              <option value="2x2">2x2</option>
+          </select>
+          
+          <select id="type-dropdown">
+              <option value="">Select Existing...</option>
+          </select>
+          
+          <input type="text" id="type-input" class="text-input" placeholder="OR type new (e.g. ZBLL)">
+          
+          <button id="load-algs-btn" style="background-color: #2196F3; color: white;">Load Data</button>
+        </div>
       </div>
 
       <div class="admin-container">
         <h2>2. Algorithm Editor</h2>
-        <div style="margin-bottom: 10px;">
-          <select id="event-select"><option value="3x3">3x3</option><option value="2x2">2x2</option></select>
-          <select id="type-select"><option value="PLL">PLL</option><option value="OLL">OLL</option></select>
-          <button id="load-algs-btn" style="background-color: #2196F3; color: white;">Load Algorithms</button>
-        </div>
         <div id="editor-rows"></div>
-        <button id="save-algs-btn" class="save-btn" style="display: none; margin-top: 20px;">Save Changes to Cloud</button>
-        <p id="save-status"></p>
+        
+        <div class="control-bar" id="editor-controls" style="display: none;">
+            <button id="add-row-btn" class="add-btn">+ Add New Alg Row</button>
+            <input type="text" id="category-image-input" class="text-input" placeholder="Category Image URL (e.g. images/pll.png)" style="flex-grow: 1; min-width: 250px;">
+            <button id="save-algs-btn" class="save-btn">Save Changes to Cloud</button>
+            <button id="delete-cat-btn" class="delete-cat-btn">Delete Entire Category</button>
+        </div>
       </div>
       
-      <div class="footer-text">Admin Panel v2.1 | System Online</div>
+      <div class="footer-text" style="color:#666; font-size: 0.8rem; margin-top:20px; text-align: center;">Admin Panel v2.9 | Authorized Access Only</div>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { allAlgorithms } from "./algs.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -73,67 +85,132 @@
     const ADMIN_UID = "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1";
     let currentAlgsList = [];
 
+    const typeDropdown = document.getElementById('type-dropdown');
+    const typeInput = document.getElementById('type-input');
+    const eventSelect = document.getElementById('event-select');
+    const editorRows = document.getElementById('editor-rows');
+    const controls = document.getElementById('editor-controls');
+    const catImageInput = document.getElementById('category-image-input');
+
     onAuthStateChanged(auth, (user) => {
       document.getElementById('loading').style.display = 'none';
-      if (user && user.uid === ADMIN_UID) document.getElementById('admin-panel').style.display = 'block';
-      else document.getElementById('access-denied').style.display = 'block';
+      if (user && user.uid === ADMIN_UID) {
+          document.getElementById('admin-panel').style.display = 'block';
+          populateDropdown();
+      } else {
+          document.getElementById('access-denied').style.display = 'block';
+      }
     });
 
-    document.getElementById('migrate-btn').addEventListener('click', async () => {
-      const status = document.getElementById('migrate-status');
-      try {
-        for (const event in allAlgorithms) {
-          for (const type in allAlgorithms[event]) {
-            await setDoc(doc(db, "global_algs", `${event}_${type}`), { algs: allAlgorithms[event][type] });
-          }
-        }
-        status.textContent = "✅ Migration Successful!";
-      } catch (e) { status.textContent = "❌ Error: " + e.message; }
+    // Fetches categories and filters them by the selected event (3x3/2x2)
+    async function populateDropdown() {
+        const selectedEvent = eventSelect.value;
+        const querySnapshot = await getDocs(collection(db, "global_algs"));
+        
+        typeDropdown.innerHTML = '<option value="">Select Existing...</option>';
+        
+        querySnapshot.forEach((doc) => {
+            if (doc.id.startsWith(`${selectedEvent}_`)) {
+                const opt = document.createElement('option');
+                opt.value = doc.id; 
+                opt.textContent = doc.id.split('_')[1]; 
+                typeDropdown.appendChild(opt);
+            }
+        });
+    }
+
+    eventSelect.addEventListener('change', () => {
+        populateDropdown();
+        editorRows.innerHTML = '';
+        controls.style.display = 'none';
+        typeInput.value = '';
     });
 
-    const editorRows = document.getElementById('editor-rows');
-    const saveBtn = document.getElementById('save-algs-btn');
-
-    document.getElementById('load-algs-btn').addEventListener('click', async () => {
-      const event = document.getElementById('event-select').value;
-      const type = document.getElementById('type-select').value;
-      const docSnap = await getDoc(doc(db, "global_algs", `${event}_${type}`));
+    function renderEditor() {
       editorRows.innerHTML = '';
-      if (docSnap.exists()) {
-        currentAlgsList = docSnap.data().algs;
-        currentAlgsList.forEach((alg, index) => {
+      currentAlgsList.forEach((alg, index) => {
           const row = document.createElement('div');
           row.className = 'alg-edit-row';
           row.innerHTML = `
             <span>${index + 1}.</span>
             <input type="text" value="${alg.name || ''}" data-field="name" data-index="${index}" placeholder="Name">
-            <input type="text" value="${alg.alg || ''}" data-field="alg" data-index="${index}" placeholder="Main Alg">
+            <input type="text" value="${alg.alg || ''}" data-field="alg" data-index="${index}" placeholder="Algorithm">
             <input type="text" value="${alg.alternates ? alg.alternates.join(', ') : ''}" data-field="alternates" data-index="${index}" placeholder="Alts">
             <input type="text" value="${alg.scrambles ? alg.scrambles.join(', ') : ''}" data-field="scrambles" data-index="${index}" placeholder="Scrambles">
             <input type="text" value="${alg.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL">
+            <button class="delete-btn" data-index="${index}" style="background:#f44336; color:white; padding:5px 10px;">X</button>
           `;
           editorRows.appendChild(row);
-        });
-        saveBtn.style.display = 'inline-block';
-      }
-    });
+      });
 
-    saveBtn.addEventListener('click', async () => {
-      const event = document.getElementById('event-select').value;
-      const type = document.getElementById('type-select').value;
-      const status = document.getElementById('save-status');
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.onclick = () => {
+              syncListFromInputs();
+              currentAlgsList.splice(btn.dataset.index, 1);
+              renderEditor();
+          };
+      });
+    }
+
+    function syncListFromInputs() {
       const inputs = editorRows.querySelectorAll('input');
       inputs.forEach(input => {
         const idx = input.dataset.index;
         const field = input.dataset.field;
+        if (!currentAlgsList[idx]) return;
         if (field === 'scrambles' || field === 'alternates') {
           currentAlgsList[idx][field] = input.value.split(',').map(s => s.trim()).filter(s => s !== '');
-        } else currentAlgsList[idx][field] = input.value;
+        } else {
+          currentAlgsList[idx][field] = input.value;
+        }
       });
+    }
+
+    document.getElementById('load-algs-btn').addEventListener('click', async () => {
+      let fullId = typeDropdown.value || `${eventSelect.value}_${typeInput.value.trim()}`;
+      
+      if (!typeDropdown.value && !typeInput.value.trim()) return alert("Pick or type a category");
+
+      const docSnap = await getDoc(doc(db, "global_algs", fullId));
+      if (docSnap.exists()) {
+        currentAlgsList = docSnap.data().algs || [];
+        catImageInput.value = docSnap.data().categoryImage || '';
+      } else {
+        currentAlgsList = [];
+        catImageInput.value = '';
+      }
+      renderEditor();
+      controls.style.display = 'flex';
+    });
+
+    document.getElementById('add-row-btn').addEventListener('click', () => {
+        syncListFromInputs();
+        currentAlgsList.push({ name: '', alg: '', alternates: [], scrambles: [], image: '' });
+        renderEditor();
+    });
+
+    document.getElementById('save-algs-btn').addEventListener('click', async () => {
+      let fullId = typeDropdown.value || `${eventSelect.value}_${typeInput.value.trim()}`;
+      syncListFromInputs();
       try {
-        await setDoc(doc(db, "global_algs", `${event}_${type}`), { algs: currentAlgsList });
-        status.textContent = "✅ Cloud Updated Successfully!";
-      } catch (e) { status.textContent = "❌ Error: " + e.message; }
+        await setDoc(doc(db, "global_algs", fullId), { 
+            algs: currentAlgsList,
+            categoryImage: catImageInput.value.trim() 
+        });
+        alert("✅ Cloud Updated Successfully!");
+        populateDropdown();
+      } catch (e) { alert("❌ Error: " + e.message); }
+    });
+
+    document.getElementById('delete-cat-btn').addEventListener('click', async () => {
+      let fullId = typeDropdown.value || `${eventSelect.value}_${typeInput.value.trim()}`;
+      if (confirm(`Are you sure you want to PERMANENTLY delete ${fullId}?`)) {
+          try {
+              await deleteDoc(doc(db, "global_algs", fullId));
+              alert("Category deleted.");
+              location.reload();
+          } catch (e) { alert("Error: " + e.message); }
+      }
     });
   </script>
 </body>

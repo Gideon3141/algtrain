@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Select Category</title>
   <link rel="stylesheet" href="style-home.css" />
-</head>
   <style>
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -22,7 +21,30 @@
     .auth-btn {
       padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
     }
+    /* Dynamic Grid Layout */
+    .event-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .event-card {
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .event-card:hover {
+      transform: scale(1.05);
+    }
+    .image-placeholder {
+      width: 150px;
+      height: 150px;
+      object-fit: contain;
+    }
   </style>
+</head>
 <body>
   <div style="position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px; z-index: 100;">
     <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
@@ -48,7 +70,7 @@
     <p id="authErrorMsg" style="color: #ff6b6b; font-size: 0.85rem; text-align: center; margin: 0; min-height: 20px;"></p>
     <button id="closeModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 10px;">Cancel</button>
   </div>
-  <!-- Top-right buttons -->
+
   <div style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 10px;">
     <button id="dark-mode-toggle" style="padding: 8px 14px; border-radius: 10px; border: none; background-color: #333; color: white; cursor: pointer;">
       🌙
@@ -59,39 +81,18 @@
   </div>
 
   <main>
-    <h1>Select a Category</h1>
-    <div class="event-container">
-      <!-- OLL Card -->
-      <div class="event-card" onclick="goToType('OLL')">
-        <h2>OLL</h2>
-        <img src="images/OLL-3x3.png" alt="OLL Image" class="image-placeholder"/>
-      </div>
-
-      <!-- PLL Card -->
-      <div class="event-card" onclick="goToType('PLL')">
-        <h2>PLL</h2>
-        <img src="images/PLL-3x3.png" alt="PLL Image" class="image-placeholder"/>
-      </div>
+    <h1 id="page-title">Select a Category</h1>
+    <div class="event-container" id="categoryGrid">
+      <p style="color: white;">Loading categories...</p>
     </div>
   </main>
 
   <script src="dark-mode.js"></script>
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const event = urlParams.get('event') || '3x3';
-
-    function goToType(type) {
-      window.location.href = `algs.html?event=${event}&type=${type}`;
-    }
-
-    document.getElementById('home-button').addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
-  </script>
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -107,6 +108,49 @@
     const provider = new GoogleAuthProvider();
     const db = getFirestore(app);
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const event = urlParams.get('event') || '3x3';
+    document.getElementById('page-title').textContent = `${event} Categories`;
+
+    const categoryGrid = document.getElementById('categoryGrid');
+
+    // --- Dynamic Category Loader ---
+    async function loadCategories() {
+      categoryGrid.innerHTML = '';
+      try {
+        const querySnapshot = await getDocs(collection(db, "global_algs"));
+        let foundAny = false;
+
+        querySnapshot.forEach((doc) => {
+          // Check if document ID starts with "3x3_" or "2x2_"
+          if (doc.id.startsWith(`${event}_`)) {
+            foundAny = true;
+            const type = doc.id.replace(`${event}_`, "");
+            const data = doc.data();
+            const imgSrc = data.categoryImage || "images/OLL-3x3.png"; // Fallback image
+
+            const card = document.createElement('div');
+            card.className = 'event-card';
+            card.onclick = () => window.location.href = `algs.html?event=${event}&type=${type}`;
+            
+            card.innerHTML = `
+              <h2>${type}</h2>
+              <img src="${imgSrc}" alt="${type} Image" class="image-placeholder"/>
+            `;
+            categoryGrid.appendChild(card);
+          }
+        });
+
+        if (!foundAny) {
+          categoryGrid.innerHTML = `<p style="color:white;">No categories found for ${event}.</p>`;
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        categoryGrid.innerHTML = `<p style="color:red;">Failed to load categories.</p>`;
+      }
+    }
+
+    // --- Auth Logic (Preserved) ---
     const openAuthModalBtn = document.getElementById('openAuthModalBtn');
     const signOutBtn = document.getElementById('signOut');
     const userNameSpan = document.getElementById('userName');
@@ -132,29 +176,22 @@
     emailSignInBtn.addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
     signOutBtn.addEventListener('click', () => { signOut(auth); });
 
-    async function loadUserData(user) {
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        localStorage.setItem('customAlts', JSON.stringify(data.customAlts || {}));
-        localStorage.setItem('savedStatuses', JSON.stringify(data.statuses || {}));
-      } else {
-        await setDoc(docRef, { customAlts: {}, statuses: {}, solves: {} });
-      }
-    }
-
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         openAuthModalBtn.style.display = 'none';
         signOutBtn.style.display = 'inline-block';
         userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
-        await loadUserData(user);
       } else {
         openAuthModalBtn.style.display = 'inline-block';
         signOutBtn.style.display = 'none';
         userNameSpan.textContent = '';
       }
+      // Load categories regardless of auth status
+      loadCategories();
+    });
+
+    document.getElementById('home-button').addEventListener('click', () => {
+      window.location.href = 'index.html';
     });
   </script>
 </body>
