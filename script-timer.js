@@ -23,253 +23,265 @@ let spaceHeld = false;
 
 // NEW: Save locally AND sync to Firebase
 function saveTimesLocallyAndToCloud() {
-const storageKey = `${event}_${type}_times`;
-localStorage.setItem(storageKey, JSON.stringify(solves));
+  const storageKey = `${event}_${type}_times`;
+  localStorage.setItem(storageKey, JSON.stringify(solves));
 
-// If the user is signed in, this function will exist and send it to Firestore
-if (window.syncSolvesToFirebase) {
-window.syncSolvesToFirebase(storageKey, solves);
-}
+  // If the user is signed in, this function will exist and send it to Firestore
+  if (window.syncSolvesToFirebase) {
+    window.syncSolvesToFirebase(storageKey, solves);
+  }
 }
 
 // NEW: Reload times when Firebase finishes loading the user's profile
 window.reloadSolvesFromStorage = function() {
-solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
-renderHistory();
+  solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
+  renderHistory();
 };
 
 function generateScramble() {
-const moves = ["R", "L", "U", "D", "F", "B"];
-const modifiers = ["", "'", "2"];
-let scramble = [];
-let lastMove = "";
+  const moves = ["R", "L", "U", "D", "F", "B"];
+  const modifiers = ["", "'", "2"];
+  let scramble = [];
+  let lastMove = "";
 
-while (scramble.length < 20) {
-let move = moves[Math.floor(Math.random() * moves.length)];
-if (move === lastMove) continue;
-lastMove = move;
-let modifier = modifiers[Math.floor(Math.random() * modifiers.length)];
-scramble.push(move + modifier);
-}
+  while (scramble.length < 20) {
+    let move = moves[Math.floor(Math.random() * moves.length)];
+    if (move === lastMove) continue;
+    lastMove = move;
+    let modifier = modifiers[Math.floor(Math.random() * modifiers.length)];
+    scramble.push(move + modifier);
+  }
 
-return scramble.join(" ");
+  return scramble.join(" ");
 }
 
 function reverseAlg(alg) {
-return alg
-.split(' ')
-.reverse()
-.map(move => {
-if (move.endsWith("'")) return move.slice(0, -1);
-else if (move.endsWith("2")) return move;
-else return move + "'";
-})
-.join(' ');
+  return alg
+    .split(' ')
+    .reverse()
+    .map(move => {
+      if (move.endsWith("'")) return move.slice(0, -1);
+      else if (move.endsWith("2")) return move;
+      else return move + "'";
+    })
+    .join(' ');
 }
 
 function setScramble() {
-const allAlgs = allAlgorithms[event]?.[type] || [];
+  const allAlgs = allAlgorithms[event]?.[type] || [];
 
-const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
-const filterStatuses = new Set(
-JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
-);
+  const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+  const filterStatuses = new Set(
+    JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+  );
 
-const STATUS_STORAGE_KEY = 'algStatuses';
-const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+  const STATUS_STORAGE_KEY = 'algStatuses';
+  const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
 
-allAlgs.forEach(alg => {
-const statusKey = `${event}_${type}_${alg.name}`;
-if (savedStatuses[statusKey]) {
-alg.status = savedStatuses[statusKey];
-}
-});
+  allAlgs.forEach(alg => {
+    const statusKey = `${event}_${type}_${alg.name}`;
+    if (savedStatuses[statusKey]) {
+      alg.status = savedStatuses[statusKey];
+    }
+  });
 
-const filteredAlgs = allAlgs.filter(alg => filterStatuses.has(alg.status));
+  const filteredAlgs = allAlgs.filter(alg => filterStatuses.has(alg.status));
 
-if (filteredAlgs.length === 0) {
-currentScramble = generateScramble();
-} else {
-const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
-currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
-}
+  if (filteredAlgs.length === 0) {
+    currentScramble = generateScramble();
+  } else {
+    const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
+    currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
+  }
 
-scrambleDiv.textContent = currentScramble;
+  scrambleDiv.textContent = currentScramble;
 }
 
 function setupFilters() {
-const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
+  if (!filtersDiv) return;
+  const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
 
-checkboxes.forEach(cb => {
-const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
-const filterStatuses = new Set(
-JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
-);
-cb.checked = filterStatuses.has(cb.value);
+  checkboxes.forEach(cb => {
+    const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+    const filterStatuses = new Set(
+      JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+    );
+    cb.checked = filterStatuses.has(cb.value);
 
-cb.addEventListener('change', () => {
-const newFilterStatuses = new Set(
-Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
-);
-localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(newFilterStatuses)));
-setScramble();
-});
-});
+    cb.addEventListener('change', () => {
+      const newFilterStatuses = new Set(
+        Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
+      );
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(newFilterStatuses)));
+      setScramble();
+    });
+  });
 }
 
 function startTimer() {
-isRunning = true;
-startTime = performance.now();
-timerInterval = setInterval(() => {
-const elapsed = (performance.now() - startTime) / 1000;
-timerDisplay.textContent = elapsed.toFixed(2);
-}, 10);
-startStopBtn.textContent = "Stop";
-timerDisplay.style.color = '';
+  isRunning = true;
+  startTime = performance.now();
+  timerInterval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) / 1000;
+    timerDisplay.textContent = elapsed.toFixed(2);
+  }, 10);
+  startStopBtn.textContent = "Stop";
+  timerDisplay.style.color = '';
 }
 
 function stopTimer() {
-isRunning = false;
-clearInterval(timerInterval);
+  isRunning = false;
+  clearInterval(timerInterval);
 
-const finalTime = (performance.now() - startTime) / 1000;
+  // --- THE FIX ---
+  // We grab the EXACT string currently displayed on the screen.
+  // This prevents the case where math says 0.409 but the display rounded to 0.41.
+  const finalTimeText = timerDisplay.textContent;
 
-solves.unshift({
-time: finalTime,
-scramble: currentScramble,
-});
+  solves.unshift({
+    time: finalTimeText,
+    scramble: currentScramble,
+  });
 
-saveTimesLocallyAndToCloud(); // Save triggers here!
-renderHistory();
-setScramble();
-startStopBtn.textContent = "Start";
+  saveTimesLocallyAndToCloud(); 
+  renderHistory();
+  setScramble();
+  startStopBtn.textContent = "Start";
 }
 
 startStopBtn.addEventListener('mousedown', () => {
-startStopBtn.style.backgroundColor = '#2f4';
+  startStopBtn.style.backgroundColor = '#2f4';
 });
 
 startStopBtn.addEventListener('mouseup', () => {
-startStopBtn.style.backgroundColor = '';
-if (isRunning) stopTimer();
-else startTimer();
+  startStopBtn.style.backgroundColor = '';
+  if (isRunning) stopTimer();
+  else startTimer();
 });
 
 document.addEventListener('keydown', (e) => {
-if (e.code === 'Space') {
-if (!spaceHeld) {
-spaceHeld = true;
-timerDisplay.style.color = 'limegreen';
-}
-e.preventDefault();
-}
+  if (e.code === 'Space') {
+    if (!spaceHeld) {
+      spaceHeld = true;
+      timerDisplay.style.color = 'limegreen';
+    }
+    e.preventDefault();
+  }
 });
 
 document.addEventListener('keyup', (e) => {
-if (e.code === 'Space') {
-if (!isRunning) startTimer();
-else stopTimer();
-spaceHeld = false;
-timerDisplay.style.color = '';
-}
+  if (e.code === 'Space') {
+    if (!isRunning) startTimer();
+    else stopTimer();
+    spaceHeld = false;
+    timerDisplay.style.color = '';
+  }
 });
 
 deleteAllBtn.addEventListener('click', () => {
-if (confirm("Delete all recorded times?")) {
-solves = [];
-saveTimesLocallyAndToCloud(); // Save triggers here!
-renderHistory();
-}
+  if (confirm("Delete all recorded times?")) {
+    solves = [];
+    saveTimesLocallyAndToCloud(); 
+    renderHistory();
+  }
 });
 
 function deleteSolve(index) {
-solves.splice(index, 1);
-saveTimesLocallyAndToCloud(); // Save triggers here!
-renderHistory();
+  solves.splice(index, 1);
+  saveTimesLocallyAndToCloud(); 
+  renderHistory();
 }
 
 function renderHistory() {
-historyList.innerHTML = '';
-solves.forEach((solve, index) => {
-const item = document.createElement('div');
-item.className = 'history-item';
+  if (!historyList) return;
+  historyList.innerHTML = '';
+  solves.forEach((solve, index) => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
 
-const solveNumber = solves.length - index;
-const circle = document.createElement('span');
-circle.textContent = solveNumber;
-circle.style.display = 'inline-block';
-circle.style.width = '24px';
-circle.style.height = '24px';
-circle.style.borderRadius = '50%';
-circle.style.border = '2px solid white';
-circle.style.textAlign = 'center';
-circle.style.marginRight = '10px';
-circle.style.fontSize = '0.9rem';
-circle.style.lineHeight = '22px';
+    const solveNumber = solves.length - index;
+    const circle = document.createElement('span');
+    circle.textContent = solveNumber;
+    circle.style.display = 'inline-block';
+    circle.style.width = '24px';
+    circle.style.height = '24px';
+    circle.style.borderRadius = '50%';
+    circle.style.border = '2px solid white';
+    circle.style.textAlign = 'center';
+    circle.style.marginRight = '10px';
+    circle.style.fontSize = '0.9rem';
+    circle.style.lineHeight = '22px';
 
-item.appendChild(circle);
-item.append(` ${parseFloat(solve.time).toFixed(2)}s`);
+    item.appendChild(circle);
 
-item.addEventListener('click', () => {
-showDetail(index);
-});
+    // parseFloat ensures that even if it's saved as a string, it renders correctly
+    item.append(` ${parseFloat(solve.time).toFixed(2)}s`);
 
-historyList.appendChild(item);
-});
+    item.addEventListener('click', () => {
+      showDetail(index);
+    });
 
-historyList.scrollTop = 0;
+    historyList.appendChild(item);
+  });
 
-if (solves.length > 0) {
-const avg =
-solves.reduce((sum, s) => sum + parseFloat(s.time), 0) / solves.length;
-averageTimeDiv.textContent = `Average: ${avg.toFixed(2)}s`;
-} else {
-averageTimeDiv.textContent = 'Average: N/A';
-}
+  historyList.scrollTop = 0;
+
+  if (solves.length > 0) {
+    const avg =
+      solves.reduce((sum, s) => sum + parseFloat(s.time), 0) / solves.length;
+    averageTimeDiv.textContent = `Average: ${avg.toFixed(2)}s`;
+  } else {
+    averageTimeDiv.textContent = 'Average: N/A';
+  }
 }
 
 function showDetail(index) {
-const solve = solves[index];
-historyList.innerHTML = '';
+  const solve = solves[index];
+  historyList.innerHTML = '';
 
-const detail = document.createElement('div');
-detail.className = 'history-item selected';
+  const detail = document.createElement('div');
+  detail.className = 'history-item selected';
 
-const content = document.createElement('div');
-content.innerHTML = `
-<em>${solve.scramble}</em><br>
-`;
-detail.appendChild(content);
+  const content = document.createElement('div');
+  content.innerHTML = `
+    <strong>${parseFloat(solve.time).toFixed(2)}s</strong><br>
+    <em>${solve.scramble}</em><br>
+  `;
+  detail.appendChild(content);
 
-const deleteBtn = document.createElement('button');
-deleteBtn.className = 'delete-time-btn';
-deleteBtn.innerHTML = '🗑️';
-deleteBtn.addEventListener('click', () => deleteSolve(index));
-detail.appendChild(deleteBtn);
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'delete-time-btn';
+  deleteBtn.innerHTML = '🗑️';
+  deleteBtn.addEventListener('click', () => deleteSolve(index));
+  detail.appendChild(deleteBtn);
 
-historyList.appendChild(detail);
+  historyList.appendChild(detail);
 
-const backBtn = document.createElement('button');
-backBtn.textContent = '← Back to History';
-backBtn.style.marginTop = '10px';
-backBtn.style.padding = '8px 12px';
-backBtn.style.borderRadius = '10px';
-backBtn.style.border = 'none';
-backBtn.style.cursor = 'pointer';
-backBtn.style.background = '#333';
-backBtn.style.color = 'white';
+  const backBtn = document.createElement('button');
+  backBtn.textContent = '← Back to History';
+  backBtn.style.marginTop = '10px';
+  backBtn.style.padding = '8px 12px';
+  backBtn.style.borderRadius = '10px';
+  backBtn.style.border = 'none';
+  backBtn.style.cursor = 'pointer';
+  backBtn.style.background = '#333';
+  backBtn.style.color = 'white';
 
-backBtn.addEventListener('click', renderHistory);
-historyList.appendChild(backBtn);
+  backBtn.addEventListener('click', renderHistory);
+  historyList.appendChild(backBtn);
 }
 
-toAlgsBtn.addEventListener('click', () => {
-window.location.href = `algs.html?event=${event}&type=${type}`;
-});
+if (toAlgsBtn) {
+  toAlgsBtn.addEventListener('click', () => {
+    window.location.href = `algs.html?event=${event}&type=${type}`;
+  });
+}
 
-homeBtn.addEventListener('click', () => {
-window.location.href = 'index.html';
-});
+if (homeBtn) {
+  homeBtn.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+}
 
 setupFilters();
 setScramble();

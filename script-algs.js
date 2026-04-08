@@ -83,8 +83,8 @@ async function startApp() {
     alg.status = savedStatuses[statusKey] || 'not learnt';
   });
 
-  setupFilters(); // Replaced the broken line 80
-  renderAlgs();   // Replaced the broken line 80
+  setupFilters(); 
+  renderAlgs(); 
 }
 
 function saveUserCustomAlts() {
