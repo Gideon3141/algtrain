@@ -22,11 +22,24 @@ const STATUS_STORAGE_KEY = 'algStatuses';
 const urlParams = new URLSearchParams(window.location.search);
 const event = urlParams.get('event') || '3x3';
 const type = urlParams.get('type') || 'PLL';
+const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
+
+// --- THE NUCLEAR SAFETY CHECK ---
+// This runs immediately. If it finds corrupted data, it wipes it.
+(function clearCorruptedStorage() {
+  const keys = [FILTER_STORAGE_KEY, STORAGE_KEY, STATUS_STORAGE_KEY];
+  keys.forEach(key => {
+    const data = localStorage.getItem(key);
+    if (data === "[object Object]" || data === "undefined") {
+      console.warn("Corrupted data found for " + key + ". Resetting...");
+      localStorage.removeItem(key);
+    }
+  });
+})();
 
 const algListDiv = document.getElementById('alg-list');
 const filtersDiv = document.querySelector('.filters');
 const toTimerBtn = document.getElementById('to-timer');
-const toAlgsBtn = document.getElementById('to-algs');
 const homeBtn = document.getElementById('home-button');
 const signInBtn = document.getElementById('googleSignIn');
 const signOutBtn = document.getElementById('signOut');
@@ -34,13 +47,12 @@ const userNameSpan = document.getElementById('userName');
 
 let algs = []; 
 let currentUser = null;
-const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
 
-// Safety check to prevent the "object Object" crash
+// Safe loading for filterStatuses
 function getInitialFilters() {
   const raw = localStorage.getItem(FILTER_STORAGE_KEY);
   try {
-    if (!raw || raw === "[object Object]") return new Set(["not learnt", "learning", "complete"]);
+    if (!raw) return new Set(["not learnt", "learning", "complete"]);
     return new Set(JSON.parse(raw));
   } catch (e) {
     return new Set(["not learnt", "learning", "complete"]);
@@ -74,10 +86,13 @@ async function startApp() {
     const statusKey = `${event}_${type}_${alg.name}`;
     if (savedStatuses[statusKey]) {
       alg.status = savedStatuses[statusKey];
+    } else {
+      alg.status = 'not learnt';
     }
   });
 
-  initializeApp(); 
+  setupFilters();
+  renderAlgs();
 }
 
 function saveUserCustomAlts() {
