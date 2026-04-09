@@ -6,7 +6,6 @@
 <title>Timer</title>
 <link rel="stylesheet" href="style-timer.css" />
 <style>
-  /* Modal Styles */
   .modal-overlay {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.7); z-index: 999;
@@ -22,13 +21,8 @@
   .auth-btn {
     padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
   }
-
-  /* History Scroll Fix for Mobile */
   .history-list {
-    max-height: 40vh; /* Limits the height of the solve list */
-    overflow-y: auto; /* Adds a scrollbar only inside this list */
-    margin-bottom: 20px; /* Space between the list and the Delete All button */
-    padding-right: 5px; /* Tiny bit of padding so the scrollbar doesn't clip text */
+    max-height: 40vh; overflow-y: auto; margin-bottom: 20px; padding-right: 5px;
   }
 </style>
 </head>
@@ -50,33 +44,35 @@
   <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
     Sign In / Sign Up
   </button>
-  <button id="signOut" class="auth-btn" style="background-color: #f44336; color: white; display: none;">
-    Sign out
+  <button id="accountBtn" class="auth-btn" style="background-color: #2196F3; color: white; display: none;">
+    Account
   </button>
-  <span id="userName" style="font-weight: bold; color: inherit;"></span>
 </div>
 
 <div class="modal-overlay" id="modalOverlay"></div>
+
 <div class="auth-modal" id="authModal">
   <h2 style="color: white; margin-top: 0; text-align: center;">Welcome</h2>
-
-  <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">
-    Sign in with Google
-  </button>
-
+  <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">Sign in with Google</button>
   <div style="color: #888; text-align: center; margin: 10px 0;">OR</div>
-
   <input type="email" id="emailInput" class="auth-input" placeholder="Email">
   <input type="password" id="passwordInput" class="auth-input" placeholder="Password">
-
   <div style="display: flex; gap: 10px;">
     <button id="emailSignInBtn" class="auth-btn" style="flex: 1; background-color: #2196F3; color: white;">Sign In</button>
     <button id="emailSignUpBtn" class="auth-btn" style="flex: 1; background-color: #FF9800; color: white;">Sign Up</button>
   </div>
-
   <p id="authErrorMsg" style="color: #ff6b6b; font-size: 0.85rem; text-align: center; margin: 0; min-height: 20px;"></p>
-
   <button id="closeModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 10px;">Cancel</button>
+</div>
+
+<div class="auth-modal" id="accountModal">
+  <h2 style="color: white; margin-top: 0; text-align: center;">Account</h2>
+  <div style="color: white; margin-bottom: 15px; font-size: 1rem; line-height: 1.6;">
+    <strong>Name:</strong> <span id="accNameDisplay"></span><br>
+    <strong>Email:</strong> <span id="accEmailDisplay"></span>
+  </div>
+  <button id="modalSignOutBtn" class="auth-btn" style="background-color: #f44336; color: white;">Sign Out</button>
+  <button id="closeAccountModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 5px;">Close</button>
 </div>
 
 <main>
@@ -113,7 +109,6 @@
 <script type="module" src="script-timer.js"></script>
 
 <script type="module">
-  // FIX: Added getApp and getApps to the import list
   import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -128,21 +123,24 @@
     measurementId: "G-FKCJTNPWW2"
   };
 
-  // FIX: The Safety Check. If an app exists, use it. If not, initialize it.
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
   const db = getFirestore(app);
 
-  // Elements
   const openAuthModalBtn = document.getElementById('openAuthModalBtn');
-  const signOutBtn = document.getElementById('signOut');
-  const userNameSpan = document.getElementById('userName');
-
+  const accountBtn = document.getElementById('accountBtn');
+  
   const authModal = document.getElementById('authModal');
+  const accountModal = document.getElementById('accountModal');
   const modalOverlay = document.getElementById('modalOverlay');
+  
   const closeModalBtn = document.getElementById('closeModalBtn');
+  const closeAccountModalBtn = document.getElementById('closeAccountModalBtn');
+  const modalSignOutBtn = document.getElementById('modalSignOutBtn');
+  const accNameDisplay = document.getElementById('accNameDisplay');
+  const accEmailDisplay = document.getElementById('accEmailDisplay');
+
   const googleSignIn = document.getElementById('googleSignIn');
   const emailSignInBtn = document.getElementById('emailSignInBtn');
   const emailSignUpBtn = document.getElementById('emailSignUpBtn');
@@ -150,56 +148,40 @@
   const passwordInput = document.getElementById('passwordInput');
   const authErrorMsg = document.getElementById('authErrorMsg');
 
-  // Track the logged in user ID so script-timer.js can access it
   window.currentUserUid = null;
 
-  // This function is called by script-timer.js to push times to Firestore
   window.syncSolvesToFirebase = async function(storageKey, solvesArray) {
     if (!window.currentUserUid) return;
     const userRef = doc(db, "users", window.currentUserUid);
-    try {
-      await updateDoc(userRef, {
-        [`solves.${storageKey}`]: solvesArray
-      });
-    } catch (error) {
-      await setDoc(userRef, { solves: { [storageKey]: solvesArray } }, { merge: true });
-    }
+    try { await updateDoc(userRef, { [`solves.${storageKey}`]: solvesArray }); } 
+    catch (error) { await setDoc(userRef, { solves: { [storageKey]: solvesArray } }, { merge: true }); }
   };
 
-  // Modal logic
-  function openModal() {
-    authModal.style.display = 'flex';
+  function openModal() { authModal.style.display = 'flex'; modalOverlay.style.display = 'block'; authErrorMsg.textContent = ''; }
+  function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
+  
+  function openAccountModal() {
+    accountModal.style.display = 'flex';
     modalOverlay.style.display = 'block';
-    authErrorMsg.textContent = '';
+    if (auth.currentUser) {
+      accNameDisplay.textContent = auth.currentUser.displayName || "Not set";
+      accEmailDisplay.textContent = auth.currentUser.email || "N/A";
+    }
   }
-  function closeModal() {
-    authModal.style.display = 'none';
-    modalOverlay.style.display = 'none';
-  }
+  function closeAccountModal() { accountModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
 
   openAuthModalBtn.addEventListener('click', openModal);
   closeModalBtn.addEventListener('click', closeModal);
-  modalOverlay.addEventListener('click', closeModal);
+  accountBtn.addEventListener('click', openAccountModal);
+  closeAccountModalBtn.addEventListener('click', closeAccountModal);
 
-  // Auth Methods
-  googleSignIn.addEventListener('click', async () => {
-    try { await signInWithPopup(auth, provider); closeModal(); } 
-    catch (error) { authErrorMsg.textContent = error.message; }
-  });
+  modalOverlay.addEventListener('click', () => { closeModal(); closeAccountModal(); });
+  modalSignOutBtn.addEventListener('click', () => { signOut(auth); closeAccountModal(); });
 
-  emailSignUpBtn.addEventListener('click', async () => {
-    try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } 
-    catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); }
-  });
+  googleSignIn.addEventListener('click', async () => { try { await signInWithPopup(auth, provider); closeModal(); } catch (error) { authErrorMsg.textContent = error.message; } });
+  emailSignUpBtn.addEventListener('click', async () => { try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
+  emailSignInBtn.addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
 
-  emailSignInBtn.addEventListener('click', async () => {
-    try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } 
-    catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); }
-  });
-
-  signOutBtn.addEventListener('click', () => { signOut(auth); });
-
-  // Load user data (including Solves!)
   async function loadUserData(user) {
     const docRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(docRef);
@@ -207,36 +189,25 @@
       const data = docSnap.data();
       localStorage.setItem('customAlts', JSON.stringify(data.customAlts || {}));
       localStorage.setItem('savedStatuses', JSON.stringify(data.statuses || {}));
-
-      // Load all timer solves saved in the cloud
       if (data.solves) {
-        for (const key in data.solves) {
-          localStorage.setItem(key, JSON.stringify(data.solves[key]));
-        }
+        for (const key in data.solves) { localStorage.setItem(key, JSON.stringify(data.solves[key])); }
       }
     } else {
       await setDoc(docRef, { customAlts: {}, statuses: {}, solves: {} });
     }
-
-    // Tell script-timer.js to instantly refresh the history panel!
-    if (window.reloadSolvesFromStorage) {
-      window.reloadSolvesFromStorage();
-    }
+    if (window.reloadSolvesFromStorage) window.reloadSolvesFromStorage();
   }
 
-  // Track login state
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       window.currentUserUid = user.uid;
       openAuthModalBtn.style.display = 'none';
-      signOutBtn.style.display = 'inline-block';
-      userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
+      accountBtn.style.display = 'inline-block';
       await loadUserData(user);
     } else {
       window.currentUserUid = null;
       openAuthModalBtn.style.display = 'inline-block';
-      signOutBtn.style.display = 'none';
-      userNameSpan.textContent = '';
+      accountBtn.style.display = 'none';
     }
   });
 </script>

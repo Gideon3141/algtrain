@@ -6,48 +6,16 @@
   <title>Algorithms</title>
   <link rel="stylesheet" href="style-algs.css" />
   <style>
-    /* Hide filter toggle on desktop */
-    #filters-toggle {
-      display: none;
-    }
-
+    #filters-toggle { display: none; }
     @media (max-width: 768px) {
-      #filters-toggle {
-        display: block;
-        margin: 10px;
-        padding: 8px 12px;
-        border-radius: 8px;
-        background-color: #333;
-        color: white;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
-      }
-
-      .filters {
-        position: static;
-        flex-direction: column;
-        margin: 10px;
-        gap: 8px;
-      }
+      #filters-toggle { display: block; margin: 10px; padding: 8px 12px; border-radius: 8px; background-color: #333; color: white; border: none; font-weight: bold; cursor: pointer; }
+      .filters { position: static; flex-direction: column; margin: 10px; gap: 8px; }
     }
-
-    /* AUTH MODAL STYLES */
-    .modal-overlay {
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.7); z-index: 999;
-    }
-    .auth-modal {
-      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: #222; padding: 20px; border-radius: 12px; z-index: 1000;
-      flex-direction: column; gap: 12px; border: 1px solid #444; width: 300px; color: white;
-    }
-    .auth-input {
-      padding: 10px; border-radius: 6px; border: 1px solid #555; background: #333; color: white;
-    }
-    .auth-btn {
-      padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
-    }
+    
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 999; }
+    .auth-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; padding: 20px; border-radius: 12px; z-index: 1000; flex-direction: column; gap: 12px; border: 1px solid #444; width: 300px; color: white; }
+    .auth-input { padding: 10px; border-radius: 6px; border: 1px solid #555; background: #333; color: white; }
+    .auth-btn { padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -66,13 +34,13 @@
     <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
       Sign In / Sign Up
     </button>
-    <button id="signOut" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #f44336; color: white; cursor: pointer; display: none;">
-      Sign out
+    <button id="accountBtn" class="auth-btn" style="background-color: #2196F3; color: white; display: none;">
+      Account
     </button>
-    <span id="userName" style="font-weight: bold;"></span>
   </div>
 
   <div class="modal-overlay" id="modalOverlay"></div>
+  
   <div class="auth-modal" id="authModal">
     <h2 style="margin-top: 0; text-align: center;">Welcome</h2>
     <button id="googleSignIn" class="auth-btn" style="background-color: #4285F4; color: white;">Sign in with Google</button>
@@ -85,6 +53,16 @@
     </div>
     <p id="authErrorMsg" style="color: #ff6b6b; font-size: 0.85rem; text-align: center; margin: 0; min-height: 20px;"></p>
     <button id="closeModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 10px;">Cancel</button>
+  </div>
+
+  <div class="auth-modal" id="accountModal">
+    <h2 style="color: white; margin-top: 0; text-align: center;">Account</h2>
+    <div style="color: white; margin-bottom: 15px; font-size: 1rem; line-height: 1.6;">
+      <strong>Name:</strong> <span id="accNameDisplay"></span><br>
+      <strong>Email:</strong> <span id="accEmailDisplay"></span>
+    </div>
+    <button id="modalSignOutBtn" class="auth-btn" style="background-color: #f44336; color: white;">Sign Out</button>
+    <button id="closeAccountModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 5px;">Close</button>
   </div>
 
   <button id="filters-toggle" class="filters-toggle">Filters ▼</button>
@@ -107,26 +85,18 @@
     const filtersDiv = document.querySelector('.filters');
 
     function updateFilterVisibility() {
-      if (window.innerWidth <= 768) {
-        filtersDiv.style.display = 'none';
-      } else {
-        filtersDiv.style.display = 'flex';
-      }
+      if (window.innerWidth <= 768) filtersDiv.style.display = 'none';
+      else filtersDiv.style.display = 'flex';
     }
 
     filtersToggle.addEventListener('click', () => {
       const isVisible = filtersDiv.style.display === 'block' || filtersDiv.style.display === 'flex';
-      if (isVisible) {
-        filtersDiv.style.display = 'none';
-        filtersToggle.textContent = 'Filters ▼';
-      } else {
-        filtersDiv.style.display = 'flex';
-        filtersToggle.textContent = 'Filters ▲';
-      }
+      if (isVisible) { filtersDiv.style.display = 'none'; filtersToggle.textContent = 'Filters ▼'; } 
+      else { filtersDiv.style.display = 'flex'; filtersToggle.textContent = 'Filters ▲'; }
     });
 
     window.addEventListener('resize', updateFilterVisibility);
-    updateFilterVisibility(); // Run on load
+    updateFilterVisibility();
   </script>
 </body>
 </html>

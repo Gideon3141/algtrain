@@ -41,11 +41,17 @@ const homeBtn = document.getElementById('home-button');
 
 // Modal and Auth Elements
 const openAuthModalBtn = document.getElementById('openAuthModalBtn');
-const signOutBtn = document.getElementById('signOut');
-const userNameSpan = document.getElementById('userName');
+const accountBtn = document.getElementById('accountBtn');
+
 const authModal = document.getElementById('authModal');
+const accountModal = document.getElementById('accountModal');
 const modalOverlay = document.getElementById('modalOverlay');
+
 const closeModalBtn = document.getElementById('closeModalBtn');
+const closeAccountModalBtn = document.getElementById('closeAccountModalBtn');
+const modalSignOutBtn = document.getElementById('modalSignOutBtn');
+const accNameDisplay = document.getElementById('accNameDisplay');
+const accEmailDisplay = document.getElementById('accEmailDisplay');
 const authErrorMsg = document.getElementById('authErrorMsg');
 
 let algs = []; 
@@ -68,25 +74,17 @@ async function startApp() {
   try {
     const docRef = doc(db, "global_algs", `${event}_${type}`);
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      algs = docSnap.data().algs;
-    } else {
-      algs = localAlgs[event]?.[type] || [];
-    }
-  } catch (e) {
-    algs = localAlgs[event]?.[type] || [];
-  }
+    if (docSnap.exists()) algs = docSnap.data().algs;
+    else algs = localAlgs[event]?.[type] || [];
+  } catch (e) { algs = localAlgs[event]?.[type] || []; }
 
   algs.forEach(alg => {
-    const prefKey = `pref_${event}_${type}_${alg.name}`;
-    const userPreference = localStorage.getItem(prefKey);
-    alg.headerAlg = userPreference || alg.alg; 
+    alg.headerAlg = localStorage.getItem(`pref_${event}_${type}_${alg.name}`) || alg.alg; 
   });
 
   const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
   algs.forEach(alg => {
-    const statusKey = `${event}_${type}_${alg.name}`;
-    alg.status = savedStatuses[statusKey] || 'not learnt';
+    alg.status = savedStatuses[`${event}_${type}_${alg.name}`] || 'not learnt';
   });
 
   setupFilters(); 
@@ -243,7 +241,6 @@ function renderAlgs() {
 
     const addAltBtn = document.createElement('button');
     addAltBtn.textContent = '+';
-    addAltBtn.title = 'Add custom alternate';
     addAltBtn.style.padding = '6px 12px';
     addAltBtn.style.borderRadius = '8px';
     addAltBtn.style.border = 'none';
@@ -284,11 +281,9 @@ function setupFilters() {
   });
 }
 
-// Auth Modal Listeners
-function closeModal() {
-  authModal.style.display = 'none';
-  modalOverlay.style.display = 'none';
-}
+// Modal and Auth Control Logic
+function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
+function closeAccountModal() { accountModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
 
 if (openAuthModalBtn) {
   openAuthModalBtn.addEventListener('click', () => {
@@ -298,34 +293,44 @@ if (openAuthModalBtn) {
   });
 }
 
+if (accountBtn) {
+  accountBtn.addEventListener('click', () => {
+    accountModal.style.display = 'flex';
+    modalOverlay.style.display = 'block';
+    if (auth.currentUser) {
+      accNameDisplay.textContent = auth.currentUser.displayName || "Not set";
+      accEmailDisplay.textContent = auth.currentUser.email || "N/A";
+    }
+  });
+}
+
 if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-if (modalOverlay) modalOverlay.addEventListener('click', closeModal);
+if (closeAccountModalBtn) closeAccountModalBtn.addEventListener('click', closeAccountModal);
 
-document.getElementById('googleSignIn').addEventListener('click', async () => {
-  try { await signInWithPopup(auth, provider); closeModal(); } 
-  catch (e) { authErrorMsg.textContent = e.message; }
-});
-
-document.getElementById('emailSignInBtn').addEventListener('click', async () => {
-  try {
-    await signInWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passwordInput').value);
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', () => {
     closeModal();
-  } catch (e) { authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
-});
+    closeAccountModal();
+  });
+}
 
-document.getElementById('emailSignUpBtn').addEventListener('click', async () => {
-  try {
-    await createUserWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passwordInput').value);
-    closeModal();
-  } catch (e) { authErrorMsg.textContent = e.message.replace('Firebase: ', ''); }
-});
+if (modalSignOutBtn) {
+  modalSignOutBtn.addEventListener('click', () => {
+    signOut(auth);
+    closeAccountModal();
+  });
+}
+
+document.getElementById('googleSignIn').addEventListener('click', async () => { try { await signInWithPopup(auth, provider); closeModal(); } catch (e) { authErrorMsg.textContent = e.message; } });
+document.getElementById('emailSignInBtn').addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passwordInput').value); closeModal(); } catch (e) { authErrorMsg.textContent = e.message.replace('Firebase: ', ''); } });
+document.getElementById('emailSignUpBtn').addEventListener('click', async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('emailInput').value, document.getElementById('passwordInput').value); closeModal(); } catch (e) { authErrorMsg.textContent = e.message.replace('Firebase: ', ''); } });
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user) {
     if (openAuthModalBtn) openAuthModalBtn.style.display = 'none';
-    if (signOutBtn) signOutBtn.style.display = 'inline-block';
-    if (userNameSpan) userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
+    if (accountBtn) accountBtn.style.display = 'inline-block';
+
     const docSnap = await getDoc(doc(db, "users", user.uid));
     if (docSnap.exists() && docSnap.data().statuses) {
       localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(docSnap.data().statuses));
@@ -335,12 +340,10 @@ onAuthStateChanged(auth, async (user) => {
     }
   } else {
     if (openAuthModalBtn) openAuthModalBtn.style.display = 'inline-block';
-    if (signOutBtn) signOutBtn.style.display = 'none';
-    if (userNameSpan) userNameSpan.textContent = '';
+    if (accountBtn) accountBtn.style.display = 'none';
   }
 });
 
-if (signOutBtn) signOutBtn.addEventListener('click', () => signOut(auth));
 if (toTimerBtn) toTimerBtn.addEventListener('click', () => { window.location.href = `timer.html?event=${event}&type=${type}`; });
 if (homeBtn) homeBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
 
