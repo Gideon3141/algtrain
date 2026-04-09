@@ -1,4 +1,19 @@
 import { allAlgorithms } from './algs.js';
+import { getApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
+  authDomain: "algdrill.firebaseapp.com",
+  projectId: "algdrill",
+  storageBucket: "algdrill.firebasestorage.app",
+  messagingSenderId: "612013160",
+  appId: "1:612013160:web:d664a05d36f71cf2c0d7dd"
+};
+
+// Safely initialize Firebase (prevents crashing if timer.html already initialized it)
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
 
 const urlParams = new URLSearchParams(window.location.search);
 const event = urlParams.get('event') || '3x3';
@@ -20,8 +35,9 @@ let timerInterval;
 let solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
 let currentScramble = '';
 let spaceHeld = false;
+let currentEventAlgs = []; // Stores the algs loaded from the cloud
 
-// NEW: Save locally AND sync to Firebase
+// Save locally AND sync to Firebase
 function saveTimesLocallyAndToCloud() {
   const storageKey = `${event}_${type}_times`;
   localStorage.setItem(storageKey, JSON.stringify(solves));
@@ -32,11 +48,29 @@ function saveTimesLocallyAndToCloud() {
   }
 }
 
-// NEW: Reload times when Firebase finishes loading the user's profile
+// Reload times when Firebase finishes loading the user's profile
 window.reloadSolvesFromStorage = function() {
   solves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
   renderHistory();
 };
+
+// Fetch algorithms from Firebase (with local fallback)
+async function loadAlgs() {
+  scrambleDiv.textContent = "Loading scrambles...";
+  try {
+    const docRef = doc(db, "global_algs", `${event}_${type}`);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists() && docSnap.data().algs) {
+      currentEventAlgs = docSnap.data().algs;
+    } else {
+      currentEventAlgs = allAlgorithms[event]?.[type] || [];
+    }
+  } catch (e) {
+    console.error("Failed to load cloud algs, using local fallback", e);
+    currentEventAlgs = allAlgorithms[event]?.[type] || [];
+  }
+  setScramble();
+}
 
 function generateScramble() {
   const moves = ["R", "L", "U", "D", "F", "B"];
@@ -56,6 +90,7 @@ function generateScramble() {
 }
 
 function reverseAlg(alg) {
+  if (!alg) return "";
   return alg
     .split(' ')
     .reverse()
@@ -68,7 +103,7 @@ function reverseAlg(alg) {
 }
 
 function setScramble() {
-  const allAlgs = allAlgorithms[event]?.[type] || [];
+  const allAlgs = currentEventAlgs; // Use the data loaded from Firebase
 
   const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
   const filterStatuses = new Set(
@@ -78,10 +113,13 @@ function setScramble() {
   const STATUS_STORAGE_KEY = 'algStatuses';
   const savedStatuses = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
 
+  // Update alg statuses from user data
   allAlgs.forEach(alg => {
     const statusKey = `${event}_${type}_${alg.name}`;
     if (savedStatuses[statusKey]) {
       alg.status = savedStatuses[statusKey];
+    } else if (!alg.status) {
+      alg.status = 'not learnt';
     }
   });
 
@@ -91,7 +129,14 @@ function setScramble() {
     currentScramble = generateScramble();
   } else {
     const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
-    currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
+
+    // Check if you saved custom scrambles in the admin panel!
+    if (randomAlg.scrambles && randomAlg.scrambles.length > 0) {
+      currentScramble = randomAlg.scrambles[Math.floor(Math.random() * randomAlg.scrambles.length)];
+    } else {
+      // Fallback: Use single legacy scramble or reverse the base alg
+      currentScramble = randomAlg.scramble || reverseAlg(randomAlg.alg);
+    }
   }
 
   scrambleDiv.textContent = currentScramble;
@@ -133,9 +178,7 @@ function stopTimer() {
   isRunning = false;
   clearInterval(timerInterval);
 
-  // --- THE FIX ---
   // We grab the EXACT string currently displayed on the screen.
-  // This ensures history matches the visual 0.01 display perfectly.
   const finalTimeText = timerDisplay.textContent;
 
   solves.unshift({
@@ -213,8 +256,6 @@ function renderHistory() {
     circle.style.lineHeight = '22px';
 
     item.appendChild(circle);
-
-    // parseFloat ensures that even if it's saved as a string, it renders correctly
     item.append(` ${parseFloat(solve.time).toFixed(2)}s`);
 
     item.addEventListener('click', () => {
@@ -284,5 +325,5 @@ if (homeBtn) {
 }
 
 setupFilters();
-setScramble();
 renderHistory();
+loadAlgs(); // Starts the whole sequence off by fetching from the cloud!

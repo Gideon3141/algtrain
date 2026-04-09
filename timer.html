@@ -113,7 +113,8 @@
 <script type="module" src="script-timer.js"></script>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  // FIX: Added getApp and getApps to the import list
+  import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -127,7 +128,9 @@
     measurementId: "G-FKCJTNPWW2"
   };
 
-  const app = initializeApp(firebaseConfig);
+  // FIX: The Safety Check. If an app exists, use it. If not, initialize it.
+  const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
   const db = getFirestore(app);
