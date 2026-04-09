@@ -27,23 +27,23 @@
 <body>
 <script src="dark-mode.js"></script>
 
-<div style="position: absolute; top: 20px; right: 20px;">
+<header style="display: flex; justify-content: space-between; align-items: flex-start; padding: 20px; flex-wrap: wrap; gap: 15px;">
+  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <a href="admin.html" id="adminLink" style="display: none; background-color: #9c27b0; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-family: sans-serif;">Admin Panel</a>
+
+    <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
+      Sign In / Sign Up
+    </button>
+    <button id="signOut" class="auth-btn" style="background-color: #f44336; color: white; display: none;">
+      Sign out
+    </button>
+    <span id="userName" style="color: white; font-weight: bold;"></span>
+  </div>
+
   <button id="dark-mode-toggle" style="padding: 8px 16px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer; font-size: 1.2rem;">
     🌙
   </button>
-</div>
-
-<div style="position: absolute; top: 20px; left: 20px; display: flex; align-items: center; gap: 10px;">
-  <a href="admin.html" id="adminLink" style="display: none; background-color: #9c27b0; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; font-family: sans-serif;">Admin Panel</a>
-
-  <button id="openAuthModalBtn" class="auth-btn" style="background-color: #4CAF50; color: white;">
-    Sign In / Sign Up
-  </button>
-  <button id="signOut" class="auth-btn" style="background-color: #f44336; color: white; display: none;">
-    Sign out
-  </button>
-  <span id="userName" style="color: white; font-weight: bold;"></span>
-</div>
+</header>
 
 <div class="modal-overlay" id="modalOverlay"></div>
 <div class="auth-modal" id="authModal">
@@ -68,7 +68,7 @@
   <button id="closeModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 10px;">Cancel</button>
 </div>
 
-<h1>Cube Timer</h1>
+<h1 style="text-align: center; margin-top: 10px;">Cube Timer</h1>
 <div class="event-grid">
   <a href="category.html?event=3x3" class="event-card">
     <div class="event-title">3x3</div>
@@ -99,6 +99,12 @@
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
   const db = getFirestore(app);
+
+  // Define Admins
+  const ADMIN_UIDS = [
+    "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", 
+    "3X2xCCJMnYgvGIv4U9xSchP6UVn2"
+  ];
 
   // Elements
   const openAuthModalBtn = document.getElementById('openAuthModalBtn');
@@ -192,8 +198,8 @@
       signOutBtn.style.display = 'inline-block';
       userNameSpan.textContent = `Hello, ${user.displayName || user.email}`;
 
-      // SHOW ADMIN BUTTON IF IT'S YOU
-      if (user.uid === "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1") {
+      // SHOW ADMIN BUTTON IF IT'S YOU OR YOUR SECOND ACCOUNT
+      if (ADMIN_UIDS.includes(user.uid)) {
         document.getElementById('adminLink').style.display = 'inline-block';
       } else {
         document.getElementById('adminLink').style.display = 'none';
@@ -213,5 +219,9 @@
     }
   });
 </script>
+
+  <footer style="position: fixed; bottom: 15px; left: 0; width: 100%; text-align: center; color: #888; font-size: 0.85rem; z-index: 10;">
+    For support or bug reports contact <a href="mailto:algdrill.official@gmail.com" style="color: #4CAF50; text-decoration: none; font-weight: bold;">algdrill.official@gmail.com</a>
+  </footer>
 </body>
 </html>

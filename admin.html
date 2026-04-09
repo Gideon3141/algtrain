@@ -80,7 +80,12 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const ADMIN_UID = "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1";
+    
+    // UPDATED: Now using an array for multiple admins
+    const ADMIN_UIDS = [
+      "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", 
+      "3X2xCCJMnYgvGIv4U9xSchP6UVn2"
+    ];
     let currentAlgsList = [];
 
     const typeDropdown = document.getElementById('type-dropdown');
@@ -92,7 +97,8 @@
 
     onAuthStateChanged(auth, (user) => {
       document.getElementById('loading').style.display = 'none';
-      if (user && user.uid === ADMIN_UID) {
+      // UPDATED: Check if the logged-in user is inside the ADMIN_UIDS array
+      if (user && ADMIN_UIDS.includes(user.uid)) {
           document.getElementById('admin-panel').style.display = 'block';
           populateDropdown();
       } else {
