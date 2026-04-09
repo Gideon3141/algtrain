@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About AlgDrill</title>
+  <link rel="icon" type="image/png" href="images/favicon.png" />
+  <link rel="stylesheet" href="style-index.css" />
+  <style>
+    .about-container {
+      max-width: 800px;
+      margin: 80px auto;
+      background: #222;
+      padding: 40px;
+      border-radius: 12px;
+      border: 1px solid #444;
+      color: white;
+      line-height: 1.6;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .about-container h1 { text-align: center; margin-bottom: 20px; color: #2196F3; font-size: 2.5rem; }
+    .about-container p { margin-bottom: 15px; font-size: 1.1rem; }
+    .about-container ul { margin-bottom: 20px; padding-left: 20px; font-size: 1.1rem; }
+    .about-container li { margin-bottom: 10px; }
+    .nav-btn { background-color: #555; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: bold; transition: 0.2s; }
+    .nav-btn:hover { background-color: #777; }
+  </style>
+</head>
+<body>
+  <script src="dark-mode.js"></script>
+
+  <div style="position: absolute; top: 20px; left: 20px; z-index: 100;">
+    <a href="index.html" class="nav-btn">← Back Home</a>
+  </div>
+
+  <div style="position: absolute; top: 20px; right: 20px; z-index: 100;">
+    <button id="dark-mode-toggle" style="padding: 8px 14px; border-radius: 8px; border: none; background-color: #333; color: white; cursor: pointer; font-size: 1.1rem;">
+      🌙
+    </button>
+  </div>
+
+  <main class="about-container">
+    <h1>About AlgDrill</h1>
+
+    <p>Welcome to <strong>AlgDrill</strong>, my new algorithm training site.</p>
+
+    <p>This website was created to help cubers train specific algorithms, track their times, and train sets like OLL, PLL, two-sided recognition and future alg sets I'll add in the future.  Unlike standard timers that simply forget your data when you switch browsers, AlgDrill has a login system with your data, so you can always log in on another device.</p>
+
+    <p><strong>Key Features:</strong></p>
+    <ul>
+      <li><strong>Targeted Training:</strong> Get scrambles specifically for the algorithms you are trying to learn right now.</li>
+      <li><strong>Cloud Sync:</strong> Create an account to save your times, custom alternate algorithms, and learning progress to the cloud so your data is always safe.</li>
+      <li><strong>Status Tracking:</strong> Mark algorithms as "Not Learnt", "Learning", or "Complete" to easily focus your practice sessions.</li>
+    </ul>
+
+    <p style="text-align: center; margin-top: 40px; color: #888; font-style: italic;">
+      (if you have any questions, email me at <a href="algdrill.official@gmail.com" style="color: #2196F3;">algdrill.official@gmail.com</a>
+    </p>
+  </main>
+
+</body>
+</html>
+<p style="text-align: center; color: #666; font-size: 0.8rem; margin-top: 50px;">
+  &copy; 2026 AlgDrill. All rights reserved. <br>
+  Unauthorized duplication or redistribution of this site's source code, 
+  design, or content is strictly prohibited.
+</p>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Algorithm Trainer</title>
+  <title>AlgDrill</title>
   <link rel="icon" type="image/png" href="images/favicon.png" />
   <link rel="stylesheet" href="style-index.css" />
   <style>
@@ -21,6 +21,21 @@
     }
     .auth-btn {
       padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
+    }
+    /* Shared style for the bottom corner buttons */
+    .corner-btn {
+      position: fixed; 
+      bottom: 15px; 
+      background-color: #333; 
+      color: white; 
+      padding: 8px 16px; 
+      border-radius: 8px; 
+      text-decoration: none; 
+      font-weight: bold; 
+      z-index: 1000;
+      border: 1px solid #555;
+      font-family: sans-serif;
+      font-size: 0.9rem;
     }
   </style>
 </head>
@@ -70,7 +85,7 @@
   <button id="closeAccountModalBtn" class="auth-btn" style="background-color: #555; color: white; margin-top: 5px;">Close</button>
 </div>
 
-<h1 style="text-align: center; margin-top: 10px;">Algorithm Trainer</h1>
+<h1 style="text-align: center; margin-top: 10px;">AlgDrill</h1>
 <div class="event-grid">
   <a href="category.html?event=3x3" class="event-card">
     <div class="event-title">3x3</div>
@@ -199,8 +214,17 @@
   });
 </script>
 
+<a href="about.html" class="corner-btn" style="left: 15px;">About</a>
+<a href="privacy.html" class="corner-btn" style="right: 15px;">Privacy Policy</a>
+
 <footer style="position: fixed; bottom: 15px; left: 0; width: 100%; text-align: center; color: #888; font-size: 0.85rem; z-index: 10;">
-  For support or bug reports contact <a href="mailto:algdrill.official@gmail.com" style="color: #4CAF50; text-decoration: none; font-weight: bold;">algdrill.official@gmail.com</a>
+  <div>
+    For support or bug reports contact <a href="mailto:algdrill.official@gmail.com" style="color: #4CAF50; text-decoration: none; font-weight: bold; pointer-events: auto;">algdrill.official@gmail.com</a>
+  </div>
+  <div style="color: #666; font-size: 0.8rem; margin-top: 5px;">
+    &copy; 2026 AlgDrill. All rights reserved. <br>
+    Unauthorized duplication or redistribution of this site's source code, design, or content is strictly prohibited.
+  </div>
 </footer>
 </body>
 </html>
