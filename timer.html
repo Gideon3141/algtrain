@@ -22,6 +22,14 @@
   .auth-btn {
     padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
   }
+
+  /* History Scroll Fix for Mobile */
+  .history-list {
+    max-height: 40vh; /* Limits the height of the solve list */
+    overflow-y: auto; /* Adds a scrollbar only inside this list */
+    margin-bottom: 20px; /* Space between the list and the Delete All button */
+    padding-right: 5px; /* Tiny bit of padding so the scrollbar doesn't clip text */
+  }
 </style>
 </head>
 <body>
