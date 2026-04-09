@@ -57,11 +57,15 @@ const authErrorMsg = document.getElementById('authErrorMsg');
 let algs = []; 
 let currentUser = null;
 
+// THE FIX: Set default to all filters if nothing is found in storage
 function getInitialFilters() {
   const raw = localStorage.getItem(FILTER_STORAGE_KEY);
   try {
     if (!raw) return new Set(["not learnt", "learning", "complete"]);
-    return new Set(JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    // Extra safety: if the array is empty, default to all
+    if (parsed.length === 0) return new Set(["not learnt", "learning", "complete"]);
+    return new Set(parsed);
   } catch (e) {
     return new Set(["not learnt", "learning", "complete"]);
   }

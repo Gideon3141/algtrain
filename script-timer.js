@@ -19,6 +19,9 @@ const urlParams = new URLSearchParams(window.location.search);
 const event = urlParams.get('event') || '3x3';
 const type = urlParams.get('type') || 'PLL';
 
+// Unique Timer Filter Key to prevent collision with Algs page
+const TIMER_FILTER_KEY = `timer_${event}_${type}_filters`;
+
 const timerDisplay = document.getElementById('timer-display');
 const startStopBtn = document.getElementById('start-stop-button');
 const scrambleDiv = document.getElementById('scramble');
@@ -105,9 +108,8 @@ function reverseAlg(alg) {
 function setScramble() {
   const allAlgs = currentEventAlgs; // Use the data loaded from Firebase
 
-  const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
   const filterStatuses = new Set(
-    JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+    JSON.parse(localStorage.getItem(TIMER_FILTER_KEY) || '["not learnt", "learning", "complete"]')
   );
 
   const STATUS_STORAGE_KEY = 'algStatuses';
@@ -147,9 +149,8 @@ function setupFilters() {
   const checkboxes = filtersDiv.querySelectorAll('input[type=checkbox]');
 
   checkboxes.forEach(cb => {
-    const FILTER_STORAGE_KEY = `${event}_${type}_filters`;
     const filterStatuses = new Set(
-      JSON.parse(localStorage.getItem(FILTER_STORAGE_KEY) || '["not learnt", "learning", "complete"]')
+      JSON.parse(localStorage.getItem(TIMER_FILTER_KEY) || '["not learnt", "learning", "complete"]')
     );
     cb.checked = filterStatuses.has(cb.value);
 
@@ -157,7 +158,7 @@ function setupFilters() {
       const newFilterStatuses = new Set(
         Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
       );
-      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(Array.from(newFilterStatuses)));
+      localStorage.setItem(TIMER_FILTER_KEY, JSON.stringify(Array.from(newFilterStatuses)));
       setScramble();
     });
   });
@@ -326,4 +327,4 @@ if (homeBtn) {
 
 setupFilters();
 renderHistory();
-loadAlgs(); // Starts the whole sequence off by fetching from the cloud!
+loadAlgs();
