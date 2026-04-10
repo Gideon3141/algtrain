@@ -31,6 +31,7 @@
     <div id="access-denied" style="color: #f44336; display: none; font-size: 1.5rem;">Access Denied.</div>
 
     <div id="admin-panel" style="display: none;">
+      
       <div class="admin-container">
         <h2>1. Select Event & Category</h2>
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
@@ -60,6 +61,19 @@
             <button id="delete-cat-btn" class="delete-cat-btn">Delete Entire Category</button>
         </div>
       </div>
+
+      <div class="admin-container" style="border: 2px dashed #666; margin-top: 40px;">
+        <h2>3. Notation Guide Editor</h2>
+        <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95rem;">Manage the images and explanations shown in the Notation popup.</p>
+        
+        <div id="notation-editor-rows"></div>
+        
+        <div class="control-bar">
+            <button id="add-notation-row-btn" class="add-btn">+ Add Notation Row</button>
+            <button id="save-notation-btn" class="save-btn">Save Notation Guide to Cloud</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -81,12 +95,12 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     
-    // UPDATED: Now using an array for multiple admins
     const ADMIN_UIDS = [
       "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", 
       "3X2xCCJMnYgvGIv4U9xSchP6UVn2"
     ];
     let currentAlgsList = [];
+    let notationList = [];
 
     const typeDropdown = document.getElementById('type-dropdown');
     const typeInput = document.getElementById('type-input');
@@ -94,13 +108,16 @@
     const editorRows = document.getElementById('editor-rows');
     const controls = document.getElementById('editor-controls');
     const catImageInput = document.getElementById('category-image-input');
+    
+    // Notation Elements
+    const notationEditorRows = document.getElementById('notation-editor-rows');
 
     onAuthStateChanged(auth, (user) => {
       document.getElementById('loading').style.display = 'none';
-      // UPDATED: Check if the logged-in user is inside the ADMIN_UIDS array
       if (user && ADMIN_UIDS.includes(user.uid)) {
           document.getElementById('admin-panel').style.display = 'block';
           populateDropdown();
+          loadNotationGuide();
       } else {
           document.getElementById('access-denied').style.display = 'block';
       }
@@ -122,7 +139,7 @@
 
     eventSelect.addEventListener('change', () => {
         populateDropdown();
-        currentAlgsList = []; // Safety Clear
+        currentAlgsList = []; 
         editorRows.innerHTML = '';
         controls.style.display = 'none';
         typeInput.value = '';
@@ -181,8 +198,6 @@
       if (!fullId) return alert("Pick or type a category name first.");
 
       const docSnap = await getDoc(doc(db, "global_algs", fullId));
-      
-      // CRITICAL: Firewall - clear list before loading new data
       currentAlgsList = []; 
       
       if (docSnap.exists()) {
@@ -229,6 +244,70 @@
           } catch (e) { alert("Error: " + e.message); }
       }
     });
+
+    /* ========================================================
+       NEW: NOTATION EDITOR LOGIC 
+       ======================================================== */
+    async function loadNotationGuide() {
+        try {
+            const docSnap = await getDoc(doc(db, "global_algs", "notation_guide"));
+            if (docSnap.exists()) {
+                notationList = docSnap.data().items || [];
+            }
+            renderNotationEditor();
+        } catch (e) { console.error("Error loading notation", e); }
+    }
+
+    function renderNotationEditor() {
+        notationEditorRows.innerHTML = '';
+        notationList.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'alg-edit-row';
+            row.innerHTML = `
+              <span>${index + 1}.</span>
+              <input type="text" value="${item.move || ''}" data-field="move" data-index="${index}" placeholder="Move (e.g. R, R')">
+              <input type="text" value="${item.desc || ''}" data-field="desc" data-index="${index}" placeholder="Description (e.g. Right side clockwise)">
+              <input type="text" value="${item.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL (e.g. images/r.png)">
+              <button class="delete-notation-btn" data-index="${index}" style="background:#f44336; color:white; padding:5px 10px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">X</button>
+            `;
+            notationEditorRows.appendChild(row);
+        });
+
+        document.querySelectorAll('.delete-notation-btn').forEach(btn => {
+            btn.onclick = () => {
+                syncNotationFromInputs();
+                notationList.splice(btn.dataset.index, 1);
+                renderNotationEditor();
+            };
+        });
+    }
+
+    function syncNotationFromInputs() {
+        const inputs = notationEditorRows.querySelectorAll('input');
+        inputs.forEach(input => {
+            const idx = input.dataset.index;
+            const field = input.dataset.field;
+            if (!notationList[idx]) return;
+            notationList[idx][field] = input.value;
+        });
+    }
+
+    document.getElementById('add-notation-row-btn').addEventListener('click', () => {
+        syncNotationFromInputs();
+        notationList.push({ move: '', desc: '', image: '' });
+        renderNotationEditor();
+    });
+
+    document.getElementById('save-notation-btn').addEventListener('click', async () => {
+        syncNotationFromInputs();
+        try {
+            await setDoc(doc(db, "global_algs", "notation_guide"), { items: notationList });
+            alert("✅ Notation Guide Saved to Cloud!");
+        } catch (e) {
+            alert("❌ Error saving notation: " + e.message);
+        }
+    });
+
   </script>
 </body>
 </html>
