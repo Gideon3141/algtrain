@@ -63,14 +63,14 @@
       </div>
 
       <div class="admin-container" style="border: 2px dashed #666; margin-top: 40px;">
-        <h2>3. Notation Guide Editor</h2>
-        <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95rem;">Manage the images and explanations shown in the Notation popup.</p>
+        <h2>3. Notation & About Editor</h2>
+        <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95rem;">Manage the text and images shown in the Notation & About popup. (Leave the Image URL blank for text-only explanations, like how the colors work!)</p>
         
         <div id="notation-editor-rows"></div>
         
         <div class="control-bar">
-            <button id="add-notation-row-btn" class="add-btn">+ Add Notation Row</button>
-            <button id="save-notation-btn" class="save-btn">Save Notation Guide to Cloud</button>
+            <button id="add-notation-row-btn" class="add-btn">+ Add Row</button>
+            <button id="save-notation-btn" class="save-btn">Save to Cloud</button>
         </div>
       </div>
 
@@ -109,7 +109,6 @@
     const controls = document.getElementById('editor-controls');
     const catImageInput = document.getElementById('category-image-input');
     
-    // Notation Elements
     const notationEditorRows = document.getElementById('notation-editor-rows');
 
     onAuthStateChanged(auth, (user) => {
@@ -245,9 +244,7 @@
       }
     });
 
-    /* ========================================================
-       NEW: NOTATION EDITOR LOGIC 
-       ======================================================== */
+    /* Notation & About Editor Logic */
     async function loadNotationGuide() {
         try {
             const docSnap = await getDoc(doc(db, "global_algs", "notation_guide"));
@@ -265,9 +262,9 @@
             row.className = 'alg-edit-row';
             row.innerHTML = `
               <span>${index + 1}.</span>
-              <input type="text" value="${item.move || ''}" data-field="move" data-index="${index}" placeholder="Move (e.g. R, R')">
-              <input type="text" value="${item.desc || ''}" data-field="desc" data-index="${index}" placeholder="Description (e.g. Right side clockwise)">
-              <input type="text" value="${item.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL (e.g. images/r.png)">
+              <input type="text" value="${item.move || ''}" data-field="move" data-index="${index}" placeholder="Title (e.g. R, or 'Colors')">
+              <input type="text" value="${item.desc || ''}" data-field="desc" data-index="${index}" placeholder="Description">
+              <input type="text" value="${item.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL (Leave blank for text only)">
               <button class="delete-notation-btn" data-index="${index}" style="background:#f44336; color:white; padding:5px 10px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">X</button>
             `;
             notationEditorRows.appendChild(row);
@@ -302,9 +299,9 @@
         syncNotationFromInputs();
         try {
             await setDoc(doc(db, "global_algs", "notation_guide"), { items: notationList });
-            alert("✅ Notation Guide Saved to Cloud!");
+            alert("✅ Notation & About Guide Saved!");
         } catch (e) {
-            alert("❌ Error saving notation: " + e.message);
+            alert("❌ Error saving guide: " + e.message);
         }
     });
 
