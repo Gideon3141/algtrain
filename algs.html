@@ -74,6 +74,9 @@
 
   <div class="auth-modal" id="notationModal" style="width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
     <h2 style="color: white; margin-top: 0; text-align: center; border-bottom: 1px solid #444; padding-bottom: 10px;">Notation & About</h2>
+    
+    <div id="notationTopDesc" style="color: #eee; font-size: 1.05rem; line-height: 1.5; margin-bottom: 20px; text-align: left; display: none;"></div>
+
     <div id="notationList" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; color: white;">
       <div style="text-align: center; color: #888;">Loading...</div>
     </div>
@@ -135,6 +138,7 @@
     const modalOverlay = document.getElementById('modalOverlay');
     const closeNotationModalBtn = document.getElementById('closeNotationModalBtn');
     const notationListDiv = document.getElementById('notationList');
+    const notationTopDesc = document.getElementById('notationTopDesc'); // NEW
 
     notationBtn.addEventListener('click', async () => {
       notationModal.style.display = 'flex';
@@ -145,33 +149,48 @@
           const docRef = doc(db, "global_algs", "notation_guide");
           const docSnap = await getDoc(docRef);
           
-          if (docSnap.exists() && docSnap.data().items && docSnap.data().items.length > 0) {
-            notationListDiv.innerHTML = '';
-            docSnap.data().items.forEach(item => {
-              const row = document.createElement('div');
-              row.style.display = 'flex';
-              row.style.alignItems = 'center';
-              row.style.gap = '15px';
-              row.style.background = '#111';
-              row.style.padding = '10px';
-              row.style.borderRadius = '8px';
-              row.style.border = '1px solid #333';
+          if (docSnap.exists()) {
+            const data = docSnap.data();
 
-              // CHANGED: If there is no image link provided, don't show the image box at all!
-              let imgHtml = '';
-              if (item.image && item.image.trim() !== '') {
-                  imgHtml = `<img src="${item.image}" style="width: 120px; height: 120px; object-fit: contain; border-radius: 6px; background: #222;" onerror="this.src='https://via.placeholder.com/120?text=Error'">`;
-              }
-              
-              row.innerHTML = `
-                ${imgHtml}
-                <div style="flex: 1;">
-                  <strong style="font-size: 1.5rem; color: #4CAF50;">${item.move || ''}</strong>
-                  <div style="font-size: 1.1rem; color: #ccc; margin-top: 6px; line-height: 1.4;">${item.desc || ''}</div>
-                </div>
-              `;
-              notationListDiv.appendChild(row);
-            });
+            // Handle the Top Explanation
+            if (data.explanation && data.explanation.trim() !== '') {
+                // Convert line breaks to HTML so formatting looks nice
+                notationTopDesc.innerHTML = data.explanation.replace(/\n/g, '<br>');
+                notationTopDesc.style.display = 'block';
+            } else {
+                notationTopDesc.style.display = 'none';
+            }
+
+            // Handle the List Items
+            if (data.items && data.items.length > 0) {
+              notationListDiv.innerHTML = '';
+              data.items.forEach(item => {
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.alignItems = 'center';
+                row.style.gap = '15px';
+                row.style.background = '#111';
+                row.style.padding = '10px';
+                row.style.borderRadius = '8px';
+                row.style.border = '1px solid #333';
+
+                let imgHtml = '';
+                if (item.image && item.image.trim() !== '') {
+                    imgHtml = `<img src="${item.image}" style="width: 120px; height: 120px; object-fit: contain; border-radius: 6px; background: #222;" onerror="this.src='https://via.placeholder.com/120?text=Error'">`;
+                }
+                
+                row.innerHTML = `
+                  ${imgHtml}
+                  <div style="flex: 1;">
+                    <strong style="font-size: 1.5rem; color: #4CAF50;">${item.move || ''}</strong>
+                    <div style="font-size: 1.1rem; color: #ccc; margin-top: 6px; line-height: 1.4;">${item.desc || ''}</div>
+                  </div>
+                `;
+                notationListDiv.appendChild(row);
+              });
+            } else {
+              notationListDiv.innerHTML = '<div style="text-align: center; color: #888;">No moves added yet.</div>';
+            }
           } else {
             notationListDiv.innerHTML = '<div style="text-align: center; color: #888;">No guide available yet. Add one in the Admin Panel!</div>';
           }
