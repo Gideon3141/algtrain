@@ -57,13 +57,11 @@ const authErrorMsg = document.getElementById('authErrorMsg');
 let algs = []; 
 let currentUser = null;
 
-// THE FIX: Set default to all filters if nothing is found in storage
 function getInitialFilters() {
   const raw = localStorage.getItem(FILTER_STORAGE_KEY);
   try {
     if (!raw) return new Set(["not learnt", "learning", "complete"]);
     const parsed = JSON.parse(raw);
-    // Extra safety: if the array is empty, default to all
     if (parsed.length === 0) return new Set(["not learnt", "learning", "complete"]);
     return new Set(parsed);
   } catch (e) {
@@ -116,6 +114,9 @@ function renderAlgs() {
   if (!algListDiv) return;
   algListDiv.innerHTML = '';
 
+  // Grab all solves for this event so we can calculate stats
+  const allSolves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
+
   algs.forEach(alg => {
     if (!filterStatuses.has(alg.status)) return;
 
@@ -142,14 +143,60 @@ function renderAlgs() {
     mainAlg.style.fontWeight = 'bold';
     card.appendChild(mainAlg);
 
+    // --- NEW: THE IMAGE & STATS CONTAINER ---
+    const imgAndStatsDiv = document.createElement('div');
+    imgAndStatsDiv.style.display = 'flex';
+    imgAndStatsDiv.style.justifyContent = 'space-between';
+    imgAndStatsDiv.style.alignItems = 'flex-start';
+    imgAndStatsDiv.style.marginTop = '15px';
+
+    // 1. The Image "Blob"
     if (alg.image) {
       const img = document.createElement('img');
       img.src = alg.image;
       img.className = 'alg-preview';
       img.style.maxWidth = '100px';
-      img.style.marginTop = '10px';
-      card.appendChild(img);
+      imgAndStatsDiv.appendChild(img);
+    } else {
+      // Empty div so the stats still get pushed to the right
+      imgAndStatsDiv.appendChild(document.createElement('div'));
     }
+
+    // 2. Calculate Math for the Stats
+    const algSolves = allSolves.filter(s => s.algName === alg.name);
+    let bestTime = "--";
+    let avgTime = "--";
+
+    if (algSolves.length > 0) {
+      const timesArray = algSolves.map(s => parseFloat(s.time));
+      bestTime = Math.min(...timesArray).toFixed(2);
+      avgTime = (timesArray.reduce((sum, t) => sum + t, 0) / timesArray.length).toFixed(2);
+    }
+
+    // 3. The Stats UI Box
+    const statsBox = document.createElement('div');
+    statsBox.style.textAlign = 'right';
+    statsBox.style.backgroundColor = '#1e1e1e';
+    statsBox.style.padding = '8px 12px';
+    statsBox.style.borderRadius = '8px';
+    statsBox.style.border = '1px solid #333';
+    statsBox.innerHTML = `
+      <div style="font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 6px; font-weight: bold; letter-spacing: 1px;">Records</div>
+      <div style="font-size: 1.1rem; margin-bottom: 4px;">
+        <span style="color: #aaa; font-size: 0.9rem; margin-right: 5px;">Best:</span> 
+        <span style="color: #4CAF50; font-weight: bold; font-family: monospace; font-size: 1.15rem;">${bestTime !== '--' ? bestTime + 's' : '--'}</span>
+      </div>
+      <div style="font-size: 1.1rem;">
+        <span style="color: #aaa; font-size: 0.9rem; margin-right: 5px;">Avg:</span> 
+        <span style="color: #2196F3; font-weight: bold; font-family: monospace; font-size: 1.15rem;">${avgTime !== '--' ? avgTime + 's' : '--'}</span>
+      </div>
+    `;
+    imgAndStatsDiv.appendChild(statsBox);
+
+    // Add the combined row to the card
+    card.appendChild(imgAndStatsDiv);
+    // --- END NEW STATS CONTAINER ---
+
 
     const globalAlts = alg.alternates || [];
     const personalAlts = userCustomAlts[alg.name] || [];
@@ -159,7 +206,7 @@ function renderAlgs() {
     if (currentAlts.length > 0) {
       const dropdownToggle = document.createElement('button');
       dropdownToggle.textContent = '▶ Show alternates';
-      dropdownToggle.style.marginTop = '8px';
+      dropdownToggle.style.marginTop = '15px';
       dropdownToggle.style.padding = '4px 8px';
       dropdownToggle.style.border = 'none';
       dropdownToggle.style.borderRadius = '6px';
@@ -285,7 +332,6 @@ function setupFilters() {
   });
 }
 
-// Modal and Auth Control Logic
 function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
 function closeAccountModal() { accountModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
 
