@@ -18,45 +18,63 @@
     .nav-btn { background-color: #555; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; }
     .control-bar { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #444; }
     #loading { text-align: center; color: white; padding: 20px; }
+
+    .db-controls { display: flex; gap: 10px; justify-content: center; align-items: center; margin-top: 10px; padding-bottom: 10px; border-bottom: 1px solid #444;}
+    .backup-btn { background-color: #FF9800; color: white; }
+    .restore-btn { background-color: #673AB7; color: white; }
   </style>
 </head>
 <body>
   <div style="padding: 20px; text-align: center;">
-    <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 10px;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 5px;">
        <a href="index.html" class="nav-btn">Home</a>
-       <h1>Admin Panel</h1>
+       <h1 style="margin: 0;">Admin Panel</h1>
     </div>
-    
+
+    <!-- DATABASE TIME MACHINE CONTROLS -->
+    <div class="db-controls" id="db-controls" style="display: none;">
+        <button id="backup-all-btn" class="backup-btn">⬇️ Download Backup File</button>
+        <button id="restore-btn" class="restore-btn">⬆️ Restore from Backup</button>
+        <input type="file" id="restore-file" accept=".json" style="display: none;">
+    </div>
+
     <div id="loading">Checking permissions...</div>
     <div id="access-denied" style="color: #f44336; display: none; font-size: 1.5rem;">Access Denied.</div>
 
     <div id="admin-panel" style="display: none;">
-      
+
       <div class="admin-container">
         <h2>1. Select Event & Category</h2>
-        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-          <select id="event-select">
-              <option value="3x3">3x3</option>
-              <option value="2x2">2x2</option>
+
+        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
+          <!-- DYNAMIC EVENT SELECTOR -->
+          <select id="event-dropdown" style="min-width: 120px;">
+              <option value="">Select Event...</option>
           </select>
-          
-          <select id="type-dropdown">
-              <option value="">Select Existing...</option>
+          <input type="text" id="event-input" class="text-input" placeholder="OR type new (e.g. 4x4)" style="max-width: 150px;">
+
+          <span style="color: #888; font-weight: bold; font-size: 1.5rem;">/</span>
+
+          <!-- DYNAMIC CATEGORY SELECTOR -->
+          <select id="category-dropdown" style="min-width: 140px;">
+              <option value="">Select Category...</option>
           </select>
-          
-          <input type="text" id="type-input" class="text-input" placeholder="OR type new (e.g. ZBLL)">
-          
-          <button id="load-algs-btn" style="background-color: #2196F3; color: white;">Load Data</button>
+          <input type="text" id="category-input" class="text-input" placeholder="OR type new (e.g. OLL)" style="max-width: 150px;">
+
+          <button id="load-algs-btn" style="background-color: #2196F3; color: white; margin-left: 10px;">Load Data</button>
         </div>
+        <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Leave dropdowns empty and use the text boxes to create entirely new events or categories.</p>
       </div>
 
       <div class="admin-container">
         <h2>2. Algorithm Editor</h2>
         <div id="editor-rows"></div>
-        
+
         <div class="control-bar" id="editor-controls" style="display: none;">
-            <button id="add-row-btn" class="add-btn">+ Add New Alg Row</button>
-            <input type="text" id="category-image-input" class="text-input" placeholder="Category Image URL (e.g. images/pll.png)" style="flex-grow: 1; min-width: 250px;">
+            <button id="add-row-btn" class="add-btn">+ Add Row</button>
+            <button id="auto-scramble-btn" style="background-color: #9c27b0; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;">🪄 Auto-Fill Scrambles</button>
+
+            <input type="text" id="category-image-input" class="text-input" placeholder="Category Image URL (e.g. images/pll.png)" style="flex-grow: 1; min-width: 200px;">
             <button id="save-algs-btn" class="save-btn">Save Changes to Cloud</button>
             <button id="delete-cat-btn" class="delete-cat-btn">Delete Entire Category</button>
         </div>
@@ -64,18 +82,15 @@
 
       <div class="admin-container" style="border: 2px dashed #666; margin-top: 40px; text-align: left;">
         <h2 style="text-align: center;">3. Notation & About Editor</h2>
-        
+
         <div style="margin-bottom: 25px; padding-top: 15px; border-top: 1px solid #333;">
             <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #4CAF50;">Top Explanation (About / Colors):</label>
-            <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 10px;">This text will appear at the very top of the popup. You can use line breaks.</p>
             <textarea id="notation-top-text" style="width: 100%; min-height: 100px; padding: 12px; border-radius: 8px; background: #333; color: white; border: 1px solid #444; font-family: inherit; font-size: 1rem; resize: vertical;" placeholder="Explain the colors (e.g. Green = Complete) or general info here..."></textarea>
         </div>
 
         <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #2196F3;">Notation Move List:</label>
-        <p style="color: #aaa; font-size: 0.85rem; margin-bottom: 15px;">Add specific moves below. Leave the Image URL blank to just show text.</p>
-        
         <div id="notation-editor-rows"></div>
-        
+
         <div class="control-bar" style="justify-content: center;">
             <button id="add-notation-row-btn" class="add-btn">+ Add Move</button>
             <button id="save-notation-btn" class="save-btn">Save Notation & About to Cloud</button>
@@ -102,66 +117,147 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    
-    const ADMIN_UIDS = [
-      "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", 
-      "3X2xCCJMnYgvGIv4U9xSchP6UVn2"
-    ];
+
+    const ADMIN_UIDS = ["CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", "3X2xCCJMnYgvGIv4U9xSchP6UVn2"];
+
     let currentAlgsList = [];
     let notationList = [];
+    let allCloudDocs = []; // Stores IDs locally so we don't spam Firebase reads
 
-    const typeDropdown = document.getElementById('type-dropdown');
-    const typeInput = document.getElementById('type-input');
-    const eventSelect = document.getElementById('event-select');
+    const eventDropdown = document.getElementById('event-dropdown');
+    const eventInput = document.getElementById('event-input');
+    const catDropdown = document.getElementById('category-dropdown');
+    const catInput = document.getElementById('category-input');
+
     const editorRows = document.getElementById('editor-rows');
     const controls = document.getElementById('editor-controls');
     const catImageInput = document.getElementById('category-image-input');
-    
-    // Notation Elements
     const notationEditorRows = document.getElementById('notation-editor-rows');
-    const notationTopText = document.getElementById('notation-top-text'); // NEW
+    const notationTopText = document.getElementById('notation-top-text');
 
     onAuthStateChanged(auth, (user) => {
       document.getElementById('loading').style.display = 'none';
       if (user && ADMIN_UIDS.includes(user.uid)) {
           document.getElementById('admin-panel').style.display = 'block';
-          populateDropdown();
+          document.getElementById('db-controls').style.display = 'flex';
+          fetchAllDocsAndPopulate();
           loadNotationGuide();
       } else {
           document.getElementById('access-denied').style.display = 'block';
       }
     });
 
-    async function populateDropdown() {
-        const selectedEvent = eventSelect.value;
+    // --- DYNAMIC EVENT & CATEGORY LOGIC ---
+    async function fetchAllDocsAndPopulate() {
         const querySnapshot = await getDocs(collection(db, "global_algs"));
-        typeDropdown.innerHTML = '<option value="">Select Existing...</option>';
+        allCloudDocs = [];
+        let uniqueEvents = new Set();
+
         querySnapshot.forEach((doc) => {
-            if (doc.id.startsWith(`${selectedEvent}_`)) {
-                const opt = document.createElement('option');
-                opt.value = doc.id; 
-                opt.textContent = doc.id.split('_')[1]; 
-                typeDropdown.appendChild(opt);
+            if(doc.id !== "notation_guide") {
+                allCloudDocs.push(doc.id);
+                // The ID format is "Event_Category", so split at the first underscore
+                let parts = doc.id.split('_');
+                uniqueEvents.add(parts[0]); 
             }
+        });
+
+        eventDropdown.innerHTML = '<option value="">Select Event...</option>';
+        uniqueEvents.forEach(ev => {
+            const opt = document.createElement('option');
+            opt.value = ev; opt.textContent = ev;
+            eventDropdown.appendChild(opt);
+        });
+        updateCategoryDropdown();
+    }
+
+    function updateCategoryDropdown() {
+        const activeEvent = eventDropdown.value || eventInput.value.trim();
+        catDropdown.innerHTML = '<option value="">Select Category...</option>';
+        if (!activeEvent) return;
+
+        let uniqueCats = new Set();
+        allCloudDocs.forEach(id => {
+            let parts = id.split('_');
+            if(parts[0] === activeEvent && parts[1]) {
+                uniqueCats.add(parts[1]);
+            }
+        });
+
+        uniqueCats.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat; opt.textContent = cat;
+            catDropdown.appendChild(opt);
         });
     }
 
-    eventSelect.addEventListener('change', () => {
-        populateDropdown();
-        currentAlgsList = []; 
+    // Update categories whenever the user changes the Event
+    eventDropdown.addEventListener('change', () => { eventInput.value = ''; updateCategoryDropdown(); resetEditor(); });
+    eventInput.addEventListener('input', () => { eventDropdown.value = ''; updateCategoryDropdown(); resetEditor(); });
+    catDropdown.addEventListener('change', () => { catInput.value = ''; resetEditor(); });
+    catInput.addEventListener('input', () => { catDropdown.value = ''; resetEditor(); });
+
+    function resetEditor() {
+        currentAlgsList = [];
         editorRows.innerHTML = '';
         controls.style.display = 'none';
-        typeInput.value = '';
-    });
-
-    function getActiveId() {
-        const dropdownVal = typeDropdown.value;
-        const manualVal = typeInput.value.trim();
-        if (dropdownVal && dropdownVal !== "") return dropdownVal;
-        if (manualVal) return `${eventSelect.value}_${manualVal}`;
-        return null;
     }
 
+    function getActiveId() {
+        const activeEvent = eventDropdown.value || eventInput.value.trim();
+        const activeCat = catDropdown.value || catInput.value.trim();
+        if (!activeEvent || !activeCat) return null;
+        return `${activeEvent}_${activeCat}`;
+    }
+
+
+    // --- TIME MACHINE (BACKUP & RESTORE) ---
+    document.getElementById('backup-all-btn').addEventListener('click', async () => {
+        try {
+            const querySnapshot = await getDocs(collection(db, "global_algs"));
+            let fullBackup = {};
+            querySnapshot.forEach((doc) => { fullBackup[doc.id] = doc.data(); });
+            const blob = new Blob([JSON.stringify(fullBackup, null, 2)], { type: "application/json" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `algdrill_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            alert("✅ Backup downloaded successfully! Keep this file safe.");
+        } catch (error) { alert("❌ Backup failed: " + error.message); }
+    });
+
+    document.getElementById('restore-btn').addEventListener('click', () => {
+        document.getElementById('restore-file').click();
+    });
+
+    document.getElementById('restore-file').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const backupData = JSON.parse(event.target.result);
+                if(!confirm("⚠️ DANGER: This will completely overwrite your live cloud database with the data in this file. Are you absolutely sure?")) {
+                    document.getElementById('restore-file').value = ''; // Reset input
+                    return;
+                }
+
+                alert("Restoring database... Please wait and do not close the window.");
+                for (const [docId, data] of Object.entries(backupData)) {
+                    await setDoc(doc(db, "global_algs", docId), data);
+                }
+                alert("✅ Database successfully restored from backup!");
+                location.reload(); 
+            } catch(err) {
+                alert("❌ Failed to read or restore file. Make sure it is a valid AlgDrill JSON backup. Error: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+    });
+
+
+    // --- ALGORITHM EDITOR LOGIC ---
     function renderEditor() {
       editorRows.innerHTML = '';
       currentAlgsList.forEach((alg, index) => {
@@ -202,19 +298,62 @@
       });
     }
 
+    // SUPERCHARGED SCRAMBLE GENERATOR (Intact)
+    function generateScramblesForAlg(baseAlg, altsArray) {
+        if (!baseAlg) return [];
+        let algsToUse = [baseAlg];
+        if (altsArray && altsArray.length > 0 && altsArray[0] !== "") algsToUse.push(...altsArray);
+
+        let inverses = algsToUse.map(alg => {
+            const moves = alg.trim().split(/\s+/);
+            return moves.reverse().map(move => {
+                if (move.endsWith("'")) return move.slice(0, -1);
+                if (move.endsWith("2")) return move;
+                return move + "'";
+            }).join(" ");
+        });
+
+        let scrambles = [];
+        const combos = [ ["", ""], ["U", "U'"], ["U'", "U2"], ["U2", "U"], ["U", "U"] ];
+        for(let i = 0; i < 5; i++) {
+            let inv = inverses[i % inverses.length]; 
+            let combo = combos[i]; 
+            let s = inv;
+            if (combo[0]) s = combo[0] + " " + s;
+            if (combo[1]) s = s + " " + combo[1];
+            s = s.replace(/\s+/g, ' ').trim();
+            scrambles.push(s);
+        }
+        return scrambles;
+    }
+
+    document.getElementById('auto-scramble-btn').addEventListener('click', () => {
+        syncListFromInputs();
+        let generatedCount = 0;
+        currentAlgsList.forEach(item => {
+            if (item.alg && (!item.scrambles || item.scrambles.length === 0 || item.scrambles[0] === "")) {
+                item.scrambles = generateScramblesForAlg(item.alg, item.alternates);
+                generatedCount++;
+            }
+        });
+        renderEditor();
+        if(generatedCount > 0) alert(`🪄 SUPER MAGIC complete! Generated 5 disguised scrambles per algorithm.`);
+        else alert("No empty scrambles needed filling.");
+    });
+
     document.getElementById('load-algs-btn').addEventListener('click', async () => {
       const fullId = getActiveId();
-      if (!fullId) return alert("Pick or type a category name first.");
+      if (!fullId) return alert("You must select or type an Event AND a Category first.");
 
       const docSnap = await getDoc(doc(db, "global_algs", fullId));
       currentAlgsList = []; 
-      
+
       if (docSnap.exists()) {
         currentAlgsList = docSnap.data().algs || [];
         catImageInput.value = docSnap.data().categoryImage || '';
       } else {
         catImageInput.value = '';
-        alert("Empty/New category initialized.");
+        alert("Empty/New category initialized. Start adding rows!");
       }
       renderEditor();
       controls.style.display = 'flex';
@@ -228,8 +367,8 @@
 
     document.getElementById('save-algs-btn').addEventListener('click', async () => {
       const fullId = getActiveId();
-      if (!fullId) return alert("Missing category name.");
-      
+      if (!fullId) return alert("Missing category/event name.");
+
       syncListFromInputs();
       try {
         await setDoc(doc(db, "global_algs", fullId), { 
@@ -237,15 +376,15 @@
             categoryImage: catImageInput.value.trim() 
         });
         alert("✅ Cloud Updated: " + fullId);
-        populateDropdown();
+        fetchAllDocsAndPopulate(); // Refresh lists
       } catch (e) { alert("❌ Error: " + e.message); }
     });
 
     document.getElementById('delete-cat-btn').addEventListener('click', async () => {
       const fullId = getActiveId();
-      if (!fullId) return alert("Select a category to delete.");
-      
-      if (confirm(`PERMANENTLY delete ${fullId}?`)) {
+      if (!fullId) return;
+
+      if (confirm(`PERMANENTLY delete ${fullId}? This will remove it from the database.`)) {
           try {
               await deleteDoc(doc(db, "global_algs", fullId));
               alert("Deleted.");
@@ -254,13 +393,12 @@
       }
     });
 
-    /* Notation & About Editor Logic */
+    /* Notation Editor Logic (Intact) */
     async function loadNotationGuide() {
         try {
             const docSnap = await getDoc(doc(db, "global_algs", "notation_guide"));
             if (docSnap.exists()) {
                 notationList = docSnap.data().items || [];
-                // Load the top text if it exists
                 notationTopText.value = docSnap.data().explanation || '';
             }
             renderNotationEditor();
@@ -283,11 +421,7 @@
         });
 
         document.querySelectorAll('.delete-notation-btn').forEach(btn => {
-            btn.onclick = () => {
-                syncNotationFromInputs();
-                notationList.splice(btn.dataset.index, 1);
-                renderNotationEditor();
-            };
+            btn.onclick = () => { syncNotationFromInputs(); notationList.splice(btn.dataset.index, 1); renderNotationEditor(); };
         });
     }
 
@@ -310,15 +444,12 @@
     document.getElementById('save-notation-btn').addEventListener('click', async () => {
         syncNotationFromInputs();
         try {
-            // NEW: Save the explanation text alongside the items
             await setDoc(doc(db, "global_algs", "notation_guide"), { 
                 explanation: notationTopText.value,
                 items: notationList 
             });
             alert("✅ Notation & About Guide Saved!");
-        } catch (e) {
-            alert("❌ Error saving guide: " + e.message);
-        }
+        } catch (e) { alert("❌ Error saving guide: " + e.message); }
     });
 
   </script>
