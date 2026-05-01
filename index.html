@@ -94,6 +94,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  // NEW: Import Google Analytics
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -109,6 +111,9 @@
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
   const db = getFirestore(app);
+  
+  // NEW: Turn on Google Analytics
+  const analytics = getAnalytics(app);
 
   const ADMIN_UIDS = ["CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", "3X2xCCJMnYgvGIv4U9xSchP6UVn2"];
 
@@ -194,18 +199,16 @@
     }
   });
 
-  // --- UPDATED DYNAMIC EVENT LOADER ---
   async function loadDynamicEvents() {
     const eventGrid = document.querySelector('.event-grid');
     try {
       const querySnapshot = await getDocs(collection(db, "global_algs"));
       const eventSet = new Set();
-      let eventMetadata = {}; // Store the cloud URLs
+      let eventMetadata = {}; 
 
       querySnapshot.forEach((doc) => {
         if (doc.id === "notation_guide") return; 
         
-        // Grab the metadata document containing the cloud URLs
         if (doc.id === "_event_metadata") {
             eventMetadata = doc.data();
             return;
@@ -230,7 +233,6 @@
           title.textContent = eventName;
           
           const img = document.createElement('img');
-          // 1. Check if there's a Cloud Image. 2. If not, use the local folder image.
           img.src = eventMetadata[eventName] ? eventMetadata[eventName] : `images/${eventName} image.png`;
           img.alt = `${eventName} Cube`;
           img.onerror = function() { 
