@@ -2,7 +2,6 @@ import { StackmatDecoder } from './stackmat-decoder.js';
 import { allAlgorithms } from './algs.js';
 import { getApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-// NEW: Import Google Analytics
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
 const decoder = new StackmatDecoder();
@@ -18,7 +17,6 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
-// NEW: Turn on Google Analytics
 const analytics = getAnalytics(app);
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -45,6 +43,22 @@ let currentScramble = '';
 let currentAlgData = null; 
 let spaceHeld = false;
 let currentEventAlgs = []; 
+
+// SCRAMBLE HISTORY VARIABLES
+let previousScrambleStr = null;
+let previousAlgDataObj = null;
+let isViewingPrevious = false;
+
+// TYPING MODE INPUT SETUP
+const typingInput = document.createElement('input');
+typingInput.type = 'number';
+typingInput.step = '0.01';
+typingInput.placeholder = '0.00';
+typingInput.style.cssText = 'display: none; font-size: 4rem; width: 100%; text-align: center; background: transparent; border: none; border-bottom: 2px solid var(--accent-color); color: var(--text-primary); outline: none; font-variant-numeric: tabular-nums; margin-bottom: 1rem;';
+
+if (timerDisplay && timerDisplay.parentNode) {
+    timerDisplay.parentNode.insertBefore(typingInput, timerDisplay.nextSibling);
+}
 
 function saveTimesLocallyAndToCloud() {
     const storageKey = `${event}_${type}_times`;
@@ -114,6 +128,12 @@ function applyRandomAUF(baseScramble) {
 }
 
 function setScramble() {
+    if (!isViewingPrevious && currentScramble && currentScramble !== "Loading scrambles...") {
+        previousScrambleStr = currentScramble;
+        previousAlgDataObj = currentAlgData;
+    }
+    isViewingPrevious = false;
+
     const allAlgs = currentEventAlgs;
     const filterStatuses = new Set(
         JSON.parse(localStorage.getItem(TIMER_FILTER_KEY) || '["not learnt", "learning", "complete"]')
@@ -184,10 +204,10 @@ function startTimer() {
     timerDisplay.style.color = '';
 }
 
-function stopTimer() {
+function stopTimer(forcedTime = null) {
     isRunning = false;
     clearInterval(timerInterval);
-    const finalTimeText = timerDisplay.textContent;
+    const finalTimeText = forcedTime !== null ? forcedTime : timerDisplay.textContent;
 
     solves.unshift({ 
         time: finalTimeText, 
@@ -211,18 +231,79 @@ startStopBtn.addEventListener('mouseup', () => {
 });
 
 document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space' && !stackmatEnabled) {
-        if (!spaceHeld) { spaceHeld = true; timerDisplay.style.color = 'limegreen'; }
+    if (e.altKey && e.code === 'KeyZ') {
         e.preventDefault();
+        if (solves.length > 0) {
+            deleteSolve(0);
+        }
+        return;
+    }
+
+    if (e.altKey && e.code === 'ArrowRight') {
+        e.preventDefault();
+        setScramble();
+        return;
+    }
+
+    if (e.altKey && e.code === 'ArrowLeft') {
+        e.preventDefault();
+        if (previousScrambleStr && !isViewingPrevious) {
+            currentScramble = previousScrambleStr;
+            currentAlgData = previousAlgDataObj;
+            scrambleDiv.textContent = currentScramble;
+            isViewingPrevious = true; 
+        }
+        return;
+    }
+
+    if (inputMode === 'timer' && document.activeElement !== typingInput) {
+        if (isRunning) {
+            e.preventDefault();
+            stopTimer();
+            spaceHeld = false;
+            timerDisplay.style.color = '';
+            return;
+        }
+
+        if (e.code === 'Space') {
+            if (!spaceHeld) { 
+                spaceHeld = true; 
+                timerDisplay.style.color = 'limegreen'; 
+            }
+            e.preventDefault();
+        }
     }
 });
 
 document.addEventListener('keyup', (e) => {
-    if (e.code === 'Space' && !stackmatEnabled) {
-        if (!isRunning) startTimer();
-        else stopTimer();
-        spaceHeld = false;
-        timerDisplay.style.color = '';
+    if (inputMode === 'timer' && document.activeElement !== typingInput) {
+        if (e.code === 'Space') {
+            if (spaceHeld && !isRunning) {
+                startTimer();
+            }
+            spaceHeld = false;
+            timerDisplay.style.color = '';
+        }
+    }
+});
+
+typingInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const rawText = typingInput.value.trim();
+        if (!rawText) return;
+
+        let finalVal = 0;
+
+        if (rawText.includes('.')) {
+            finalVal = parseFloat(rawText);
+        } else {
+            finalVal = parseInt(rawText, 10) / 100;
+        }
+
+        if (!isNaN(finalVal) && finalVal > 0) {
+            stopTimer(finalVal.toFixed(2));
+            typingInput.value = ''; 
+        }
     }
 });
 
@@ -242,17 +323,21 @@ function deleteSolve(index) {
 
 function renderHistory() {
     if (!historyList) return;
+
+    // FIX: Restore the grid layout when rendering the main history list
+    historyList.style.display = ''; 
     historyList.innerHTML = '';
+
     solves.forEach((solve, index) => {
         const item = document.createElement('div');
         item.className = 'history-item';
         const solveNumber = solves.length - index;
-        const circle = document.createElement('span');
-        circle.textContent = solveNumber;
-        circle.style.display = 'inline-block';
-        circle.style.width = '24px'; circle.style.height = '24px'; circle.style.borderRadius = '50%'; circle.style.border = '2px solid white'; circle.style.textAlign = 'center'; circle.style.marginRight = '10px'; circle.style.fontSize = '0.9rem'; circle.style.lineHeight = '22px';
-        item.appendChild(circle);
-        item.append(` ${parseFloat(solve.time).toFixed(2)}s - ${solve.algName || ""}`);
+
+        item.innerHTML = `
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">${solveNumber}</div>
+            <div style="font-weight: bold; font-size: 1.15rem; color: var(--text-primary); font-family: monospace;">${parseFloat(solve.time).toFixed(2)}</div>
+        `;
+
         item.addEventListener('click', () => { showDetail(index); });
         historyList.appendChild(item);
     });
@@ -264,6 +349,9 @@ function renderHistory() {
 
 function showDetail(index) {
     const solve = solves[index];
+
+    // FIX: Temporarily kill the grid layout so this view can take 100% of the width
+    historyList.style.display = 'block'; 
     historyList.innerHTML = '';
 
     const detail = document.createElement('div');
@@ -276,57 +364,59 @@ function showDetail(index) {
     detail.style.color = 'white';
 
     const imageSrc = solve.algImage || "images/placeholder.png";
-    const imageHtml = `<img src="${imageSrc}" style="max-width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; border-radius: 8px; border: 1px solid #444; background: #222;" onerror="this.src='https://via.placeholder.com/80?text=No+Img'">`;
+    // Slightly bigger image for the full-width layout
+    const imageHtml = `<img src="${imageSrc}" style="max-width: 100px; height: 100px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; border: 1px solid #444; background: #222;" onerror="this.src='https://via.placeholder.com/100?text=No+Img'">`;
 
     const content = document.createElement('div');
     content.style.width = '100%';
+
+    // Completely rebuilt HTML to stretch to 100% width and utilize Word Wrap properly
     content.innerHTML = `
-    <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 5px;">${solve.algName || "Random"}</div>
+    <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 8px;">${solve.algName || "Random Scramble"}</div>
     ${imageHtml}
-    <div style="font-size: 1.5rem; color: #4CAF50; font-weight: bold; margin-bottom: 10px;">${parseFloat(solve.time).toFixed(2)}s</div>
+    <div style="font-size: 2rem; color: #4CAF50; font-weight: bold; margin-bottom: 20px;">${parseFloat(solve.time).toFixed(2)}s</div>
 
-    <div style="width: 100%; max-width: 280px; text-align: left; margin: 0 auto 10px auto;">
-    <small style="color: #888; font-weight: bold; text-transform: uppercase; font-size: 0.6rem;">Algorithm</small>
-    <div style="background: #111; padding: 8px; border-radius: 6px; border: 1px solid #333; color: #fff; font-family: monospace; font-size: 0.85rem; word-break: break-all;">
-    ${solve.algText || "N/A"}
-    </div>
+    <div style="width: 100%; text-align: left; margin: 0 auto 15px auto;">
+        <small style="color: #888; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Algorithm</small>
+        <div style="background: #111; padding: 12px; border-radius: 8px; border: 1px solid #333; color: #fff; font-family: monospace; font-size: 1rem; word-wrap: break-word; margin-top: 4px;">
+            ${solve.algText || "N/A"}
+        </div>
     </div>
 
-    <div style="width: 100%; max-width: 280px; text-align: left; margin: 0 auto 10px auto;">
-    <small style="color: #888; font-weight: bold; text-transform: uppercase; font-size: 0.6rem;">Scramble</small>
-    <div style="background: #111; padding: 8px; border-radius: 6px; border: 1px solid #333; color: #aaa; font-family: monospace; font-size: 0.75rem; word-break: break-all;">
-    ${solve.scramble}
-    </div>
+    <div style="width: 100%; text-align: left; margin: 0 auto 20px auto;">
+        <small style="color: #888; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Scramble</small>
+        <div style="background: #111; padding: 12px; border-radius: 8px; border: 1px solid #333; color: #aaa; font-family: monospace; font-size: 0.9rem; word-wrap: break-word; margin-top: 4px;">
+            ${solve.scramble}
+        </div>
     </div>
     `;
     detail.appendChild(content);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.innerHTML = '🗑️ Delete Solve';
-    deleteBtn.style.marginTop = "10px";
-    deleteBtn.style.padding = "8px 16px";
+    deleteBtn.style.padding = "10px 16px";
     deleteBtn.style.borderRadius = "8px";
     deleteBtn.style.border = "none";
     deleteBtn.style.width = '100%';
-    deleteBtn.style.maxWidth = '250px';
     deleteBtn.style.backgroundColor = "#f44336";
     deleteBtn.style.color = "white";
     deleteBtn.style.fontWeight = "bold";
     deleteBtn.style.cursor = "pointer";
+    deleteBtn.style.fontSize = "1rem";
+    deleteBtn.style.marginBottom = "10px";
     deleteBtn.onclick = () => { if(confirm("Delete this solve?")) deleteSolve(index); };
     detail.appendChild(deleteBtn);
 
     const backBtn = document.createElement('button');
-    backBtn.textContent = '← Back'; 
-    backBtn.style.marginTop = '8px'; 
-    backBtn.style.padding = '8px 16px'; 
+    backBtn.textContent = '← Back to History'; 
+    backBtn.style.padding = '10px 16px'; 
     backBtn.style.borderRadius = '8px'; 
-    backBtn.style.border = 'none'; 
+    backBtn.style.border = '1px solid #555'; 
     backBtn.style.cursor = 'pointer'; 
     backBtn.style.background = '#333'; 
     backBtn.style.color = 'white';
     backBtn.style.width = '100%';
-    backBtn.style.maxWidth = '250px';
+    backBtn.style.fontSize = "1rem";
     backBtn.onclick = renderHistory;
     detail.appendChild(backBtn);
 
@@ -337,48 +427,141 @@ function showDetail(index) {
 if (toAlgsBtn) toAlgsBtn.addEventListener('click', () => { window.location.href = `algs.html?event=${event}&type=${type}`; });
 if (homeBtn) homeBtn.addEventListener('click', () => { window.location.href = 'index.html'; });
 
-// --- HYBRID STACKMAT INTEGRATION ---
+// --- MENU POP-UP INPUT LOGIC ---
+let inputMode = localStorage.getItem('algdrill_input_mode') || 'timer';
 let stackmatEnabled = false;
-const inputBtn = document.getElementById('input-mode-btn');
 
-if (inputBtn) {
-    inputBtn.addEventListener('click', async () => {
-        if (!stackmatEnabled) {
-            try {
-                await decoder.start((data) => {
+const oldBtn = document.getElementById('input-mode-btn');
+let triggerBtn;
+let menuContainer;
 
-                    if (data.state === 'running' && !isRunning) {
-                        startTimer();
+if (oldBtn) {
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'fixed';
+    wrapper.style.bottom = '20px';
+    wrapper.style.left = '20px';
+    wrapper.style.zIndex = '1000';
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = 'flex-start';
+    wrapper.style.gap = '10px';
 
-                    } else if (data.state === 'stopped' && isRunning) {
-                        clearInterval(timerInterval);
+    menuContainer = document.createElement('div');
+    menuContainer.style.display = 'none';
+    menuContainer.style.flexDirection = 'column';
+    menuContainer.style.background = 'var(--bg-secondary)';
+    menuContainer.style.border = '1px solid var(--border-color)';
+    menuContainer.style.borderRadius = '12px';
+    menuContainer.style.overflow = 'hidden';
+    menuContainer.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
 
-                        // FIX: Convert exact hardware milliseconds to pure seconds (e.g., 12340 -> "12.34").
-                        // This removes the "0:" format entirely and feeds a clean decimal to your history so parseFloat doesn't break!
-                        const hardwareSeconds = (data.timeMs / 1000).toFixed(2);
-                        timerDisplay.textContent = hardwareSeconds;
+    const modes = [
+        { id: 'timer', text: 'Timer' },
+        { id: 'stackmat', text: 'Stackmat' },
+        { id: 'typing', text: 'Typing' }
+    ];
 
-                        stopTimer();
+    modes.forEach(m => {
+        const opt = document.createElement('div');
+        opt.innerHTML = `<span>${m.text}</span>`;
+        opt.style.padding = '12px 20px';
+        opt.style.cursor = 'pointer';
+        opt.style.color = 'var(--text-primary)';
+        opt.style.transition = 'background 0.2s';
+        opt.style.fontWeight = 'bold';
 
-                    } else if (data.state === 'stopped' && data.timeMs === 0 && !isRunning) {
-                        timerDisplay.textContent = "0.00";
-                    }
-                });
+        opt.onmouseenter = () => opt.style.background = 'var(--bg-tertiary)';
+        opt.onmouseleave = () => opt.style.background = 'transparent';
 
-                stackmatEnabled = true;
-                inputBtn.textContent = '⏱️';
-                inputBtn.style.background = '#4CAF50';
+        opt.addEventListener('click', () => {
+            setMode(m.id);
+            menuContainer.style.display = 'none';
+        });
+        menuContainer.appendChild(opt);
+    });
 
-            } catch (err) {
-                alert("Microphone access denied or not found.");
-            }
-        } else {
-            decoder.stop();
-            stackmatEnabled = false;
-            inputBtn.textContent = '⌨️';
-            inputBtn.style.background = '#444';
+    triggerBtn = document.createElement('button');
+    triggerBtn.style.padding = '12px 24px';
+    triggerBtn.style.borderRadius = '25px';
+    triggerBtn.style.border = '1px solid var(--border-color)';
+    triggerBtn.style.cursor = 'pointer';
+    triggerBtn.style.color = '#fff';
+    triggerBtn.style.fontWeight = 'bold';
+    triggerBtn.style.fontSize = '1rem';
+    triggerBtn.style.display = 'flex';
+    triggerBtn.style.alignItems = 'center';
+    triggerBtn.style.gap = '8px';
+    triggerBtn.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+
+    triggerBtn.addEventListener('click', () => {
+        menuContainer.style.display = menuContainer.style.display === 'none' ? 'flex' : 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            menuContainer.style.display = 'none';
         }
     });
+
+    oldBtn.parentNode.replaceChild(wrapper, oldBtn);
+    wrapper.appendChild(menuContainer);
+    wrapper.appendChild(triggerBtn);
+
+    setMode(inputMode, true);
+}
+
+async function setMode(newMode, isInitialLoad = false) {
+    if (stackmatEnabled) {
+        decoder.stop();
+        stackmatEnabled = false;
+    }
+
+    inputMode = newMode;
+    localStorage.setItem('algdrill_input_mode', inputMode);
+
+    if (inputMode === 'timer') {
+        triggerBtn.innerHTML = 'Timer';
+        triggerBtn.style.background = '#444';
+        timerDisplay.style.display = 'block';
+        typingInput.style.display = 'none';
+        startStopBtn.style.display = 'inline-block';
+    } 
+    else if (inputMode === 'typing') {
+        triggerBtn.innerHTML = 'Typing';
+        triggerBtn.style.background = '#2196F3';
+        timerDisplay.style.display = 'none';
+        typingInput.style.display = 'block';
+        startStopBtn.style.display = 'none';
+        if (!isInitialLoad) typingInput.focus();
+    } 
+    else if (inputMode === 'stackmat') {
+        triggerBtn.innerHTML = 'Stackmat';
+        triggerBtn.style.background = '#4CAF50';
+        timerDisplay.style.display = 'block';
+        typingInput.style.display = 'none';
+        startStopBtn.style.display = 'inline-block';
+
+        try {
+            await decoder.start((data) => {
+                if (data.state === 'running' && !isRunning) {
+                    startTimer();
+                } else if (data.state === 'stopped' && isRunning) {
+                    clearInterval(timerInterval);
+                    const hardwareSeconds = (data.timeMs / 1000).toFixed(2);
+                    timerDisplay.textContent = hardwareSeconds;
+                    stopTimer();
+                } else if (data.state === 'stopped' && data.timeMs === 0 && !isRunning) {
+                    timerDisplay.textContent = "0.00";
+                }
+            });
+            stackmatEnabled = true;
+        } catch (err) {
+            if (!isInitialLoad) {
+                alert("Microphone access denied or not found.");
+            }
+            setMode('timer'); 
+        }
+    }
 }
 
 setupFilters();
