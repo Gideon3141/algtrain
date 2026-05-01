@@ -2,6 +2,8 @@ import { StackmatDecoder } from './stackmat-decoder.js';
 import { allAlgorithms } from './algs.js';
 import { getApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// NEW: Import Google Analytics
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
 const decoder = new StackmatDecoder();
 
@@ -16,6 +18,8 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
+// NEW: Turn on Google Analytics
+const analytics = getAnalytics(app);
 
 const urlParams = new URLSearchParams(window.location.search);
 const event = urlParams.get('event') || '3x3';
