@@ -47,7 +47,6 @@
         <h2>1. Select Event & Category</h2>
 
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
-          <!-- DYNAMIC EVENT SELECTOR -->
           <select id="event-dropdown" style="min-width: 120px;">
               <option value="">Select Event...</option>
           </select>
@@ -55,7 +54,6 @@
 
           <span style="color: #888; font-weight: bold; font-size: 1.5rem;">/</span>
 
-          <!-- DYNAMIC CATEGORY SELECTOR -->
           <select id="category-dropdown" style="min-width: 140px;">
               <option value="">Select Category...</option>
           </select>
@@ -64,6 +62,18 @@
           <button id="load-algs-btn" style="background-color: #2196F3; color: white; margin-left: 10px;">Load Data</button>
         </div>
         <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Leave dropdowns empty and use the text boxes to create entirely new events or categories.</p>
+
+        <!-- NEW: EVENT IMAGE UPLOADER -->
+        <div style="margin-top: 25px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px dashed #4CAF50; display: inline-block; text-align: left;">
+            <h4 style="margin: 0 0 10px 0; color: #4CAF50;">Event Thumbnail (For Home Page)</h4>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 0;">Select an Event above, then pick an image file to upload it directly to the cloud.</p>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="file" id="event-file-input" accept="image/*" style="background: #333; color: white; padding: 5px; border-radius: 4px;">
+                <button id="upload-event-img-btn" class="save-btn" style="padding: 8px 12px; font-size: 0.9rem;">Upload to Cloud</button>
+                <span id="upload-status" style="color: #2196F3; font-weight: bold; display: none;">Uploading...</span>
+            </div>
+        </div>
+
       </div>
 
       <div class="admin-container">
@@ -104,6 +114,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    // NEW FIREBASE STORAGE IMPORTS
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -117,12 +129,13 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app); // INITIALIZE STORAGE
 
     const ADMIN_UIDS = ["CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", "3X2xCCJMnYgvGIv4U9xSchP6UVn2"];
 
     let currentAlgsList = [];
     let notationList = [];
-    let allCloudDocs = []; // Stores IDs locally so we don't spam Firebase reads
+    let allCloudDocs = []; 
 
     const eventDropdown = document.getElementById('event-dropdown');
     const eventInput = document.getElementById('event-input');
@@ -147,16 +160,15 @@
       }
     });
 
-    // --- DYNAMIC EVENT & CATEGORY LOGIC ---
     async function fetchAllDocsAndPopulate() {
         const querySnapshot = await getDocs(collection(db, "global_algs"));
         allCloudDocs = [];
         let uniqueEvents = new Set();
 
         querySnapshot.forEach((doc) => {
-            if(doc.id !== "notation_guide") {
+            // Ignore system documents so they don't show up in dropdowns
+            if(doc.id !== "notation_guide" && doc.id !== "_event_metadata") {
                 allCloudDocs.push(doc.id);
-                // The ID format is "Event_Category", so split at the first underscore
                 let parts = doc.id.split('_');
                 uniqueEvents.add(parts[0]); 
             }
@@ -191,7 +203,6 @@
         });
     }
 
-    // Update categories whenever the user changes the Event
     eventDropdown.addEventListener('change', () => { eventInput.value = ''; updateCategoryDropdown(); resetEditor(); });
     eventInput.addEventListener('input', () => { eventDropdown.value = ''; updateCategoryDropdown(); resetEditor(); });
     catDropdown.addEventListener('change', () => { catInput.value = ''; resetEditor(); });
@@ -209,6 +220,52 @@
         if (!activeEvent || !activeCat) return null;
         return `${activeEvent}_${activeCat}`;
     }
+
+    // --- NEW: CLOUD IMAGE UPLOADER LOGIC ---
+    const eventFileInput = document.getElementById('event-file-input');
+    const uploadEventImgBtn = document.getElementById('upload-event-img-btn');
+    const uploadStatus = document.getElementById('upload-status');
+
+    uploadEventImgBtn.addEventListener('click', async () => {
+        const activeEvent = eventDropdown.value || eventInput.value.trim();
+        if (!activeEvent) return alert("You must select or type an Event name above before uploading its thumbnail.");
+
+        const file = eventFileInput.files[0];
+        if (!file) return alert("Please choose an image file first.");
+
+        uploadStatus.style.display = 'inline-block';
+        uploadStatus.textContent = "Uploading...";
+        uploadStatus.style.color = "#2196F3";
+
+        try {
+            // 1. Send the physical file to Firebase Storage
+            const fileExt = file.name.split('.').pop();
+            const storageRef = ref(storage, `event_images/${activeEvent}.${fileExt}`);
+            await uploadBytes(storageRef, file);
+            
+            // 2. Get the permanent web link for the file
+            const downloadURL = await getDownloadURL(storageRef);
+
+            // 3. Save the link to our metadata database
+            await setDoc(doc(db, "global_algs", "_event_metadata"), {
+                [activeEvent]: downloadURL
+            }, { merge: true });
+
+            uploadStatus.textContent = "✅ Saved to Cloud!";
+            uploadStatus.style.color = "#4CAF50";
+            
+            setTimeout(() => { 
+                uploadStatus.style.display = 'none'; 
+                eventFileInput.value = ''; 
+            }, 3000);
+
+        } catch (error) {
+            console.error(error);
+            uploadStatus.textContent = "❌ Error";
+            uploadStatus.style.color = "#f44336";
+            alert("Upload failed. (Make sure Firebase Storage rules allow writes!)\n" + error.message);
+        }
+    });
 
 
     // --- TIME MACHINE (BACKUP & RESTORE) ---
@@ -239,7 +296,7 @@
             try {
                 const backupData = JSON.parse(event.target.result);
                 if(!confirm("⚠️ DANGER: This will completely overwrite your live cloud database with the data in this file. Are you absolutely sure?")) {
-                    document.getElementById('restore-file').value = ''; // Reset input
+                    document.getElementById('restore-file').value = ''; 
                     return;
                 }
 
@@ -255,7 +312,6 @@
         };
         reader.readAsText(file);
     });
-
 
     // --- ALGORITHM EDITOR LOGIC ---
     function renderEditor() {
@@ -298,7 +354,6 @@
       });
     }
 
-    // SUPERCHARGED SCRAMBLE GENERATOR (Intact)
     function generateScramblesForAlg(baseAlg, altsArray) {
         if (!baseAlg) return [];
         let algsToUse = [baseAlg];
@@ -376,7 +431,7 @@
             categoryImage: catImageInput.value.trim() 
         });
         alert("✅ Cloud Updated: " + fullId);
-        fetchAllDocsAndPopulate(); // Refresh lists
+        fetchAllDocsAndPopulate(); 
       } catch (e) { alert("❌ Error: " + e.message); }
     });
 
@@ -393,7 +448,7 @@
       }
     });
 
-    /* Notation Editor Logic (Intact) */
+    /* Notation Editor Logic */
     async function loadNotationGuide() {
         try {
             const docSnap = await getDoc(doc(db, "global_algs", "notation_guide"));

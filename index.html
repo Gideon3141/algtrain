@@ -22,7 +22,6 @@
     .auth-btn {
       padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
     }
-    /* Shared style for the bottom corner buttons */
     .corner-btn {
       position: fixed; 
       bottom: 15px; 
@@ -86,21 +85,15 @@
 </div>
 
 <h1 style="text-align: center; margin-top: 10px;">AlgDrill</h1>
+
 <div class="event-grid">
-  <a href="category.html?event=3x3" class="event-card">
-    <div class="event-title">3x3</div>
-    <img src="images/3x3 image.png" alt="3x3 Cube" />
-  </a>
-  <a href="category.html?event=2x2" class="event-card">
-    <div class="event-title">2x2</div>
-    <img src="images/2x2 image.png" alt="2x2 Cube" />
-  </a>
+  <div style="text-align: center; color: #888; width: 100%;">Loading events...</div>
 </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA_DBD5S1sv7FGv_K6F7tUWxYs-JG3Jw-8",
@@ -119,20 +112,16 @@
 
   const ADMIN_UIDS = ["CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", "3X2xCCJMnYgvGIv4U9xSchP6UVn2"];
 
-  // Elements
   const openAuthModalBtn = document.getElementById('openAuthModalBtn');
   const accountBtn = document.getElementById('accountBtn');
-  
   const authModal = document.getElementById('authModal');
   const accountModal = document.getElementById('accountModal');
   const modalOverlay = document.getElementById('modalOverlay');
-  
   const closeModalBtn = document.getElementById('closeModalBtn');
   const closeAccountModalBtn = document.getElementById('closeAccountModalBtn');
   const modalSignOutBtn = document.getElementById('modalSignOutBtn');
   const accNameDisplay = document.getElementById('accNameDisplay');
   const accEmailDisplay = document.getElementById('accEmailDisplay');
-  
   const googleSignIn = document.getElementById('googleSignIn');
   const emailSignInBtn = document.getElementById('emailSignInBtn');
   const emailSignUpBtn = document.getElementById('emailSignUpBtn');
@@ -143,11 +132,9 @@
   window.userCustomAlts = {};
   window.savedStatuses = {};
 
-  // Login Modal logic
   function openModal() { authModal.style.display = 'flex'; modalOverlay.style.display = 'block'; authErrorMsg.textContent = ''; }
   function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
 
-  // Account Modal logic
   function openAccountModal() {
     accountModal.style.display = 'flex';
     modalOverlay.style.display = 'block';
@@ -164,15 +151,12 @@
   closeAccountModalBtn.addEventListener('click', closeAccountModal);
 
   modalOverlay.addEventListener('click', () => { closeModal(); closeAccountModal(); });
-
   modalSignOutBtn.addEventListener('click', () => { signOut(auth); closeAccountModal(); });
 
-  // Auth functions
   googleSignIn.addEventListener('click', async () => { try { await signInWithPopup(auth, provider); closeModal(); } catch (error) { authErrorMsg.textContent = error.message; } });
   emailSignUpBtn.addEventListener('click', async () => { try { await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
   emailSignInBtn.addEventListener('click', async () => { try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); closeModal(); } catch (error) { authErrorMsg.textContent = error.message.replace('Firebase: ', ''); } });
 
-  // Load user data
   async function loadUserData(user) {
     const docRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(docRef);
@@ -189,12 +173,10 @@
     localStorage.setItem('savedStatuses', JSON.stringify(window.savedStatuses));
   }
 
-  // Track login state
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       openAuthModalBtn.style.display = 'none';
       accountBtn.style.display = 'inline-block';
-
       if (ADMIN_UIDS.includes(user.uid)) {
         document.getElementById('adminLink').style.display = 'inline-block';
       } else {
@@ -205,13 +187,70 @@
       openAuthModalBtn.style.display = 'inline-block';
       accountBtn.style.display = 'none';
       if(document.getElementById('adminLink')) document.getElementById('adminLink').style.display = 'none';
-
       window.userCustomAlts = {};
       window.savedStatuses = {};
       localStorage.removeItem('customAlts');
       localStorage.removeItem('savedStatuses');
     }
   });
+
+  // --- UPDATED DYNAMIC EVENT LOADER ---
+  async function loadDynamicEvents() {
+    const eventGrid = document.querySelector('.event-grid');
+    try {
+      const querySnapshot = await getDocs(collection(db, "global_algs"));
+      const eventSet = new Set();
+      let eventMetadata = {}; // Store the cloud URLs
+
+      querySnapshot.forEach((doc) => {
+        if (doc.id === "notation_guide") return; 
+        
+        // Grab the metadata document containing the cloud URLs
+        if (doc.id === "_event_metadata") {
+            eventMetadata = doc.data();
+            return;
+        }
+
+        const parts = doc.id.split('_');
+        if (parts.length >= 1) {
+          eventSet.add(parts[0]);
+        }
+      });
+
+      if (eventSet.size > 0) {
+        eventGrid.innerHTML = ''; 
+        
+        eventSet.forEach(eventName => {
+          const a = document.createElement('a');
+          a.href = `category.html?event=${eventName}`;
+          a.className = 'event-card';
+          
+          const title = document.createElement('div');
+          title.className = 'event-title';
+          title.textContent = eventName;
+          
+          const img = document.createElement('img');
+          // 1. Check if there's a Cloud Image. 2. If not, use the local folder image.
+          img.src = eventMetadata[eventName] ? eventMetadata[eventName] : `images/${eventName} image.png`;
+          img.alt = `${eventName} Cube`;
+          img.onerror = function() { 
+              this.src = `https://via.placeholder.com/150/222/FFF?text=${eventName}`; 
+          };
+
+          a.appendChild(title);
+          a.appendChild(img);
+          eventGrid.appendChild(a);
+        });
+      } else {
+          eventGrid.innerHTML = '<div style="text-align: center; color: #888; width: 100%;">No events found in database. Add some in the Admin Panel!</div>';
+      }
+    } catch(e) { 
+      console.error("Error loading events:", e); 
+      eventGrid.innerHTML = '<div style="text-align: center; color: #ff6b6b; width: 100%;">Failed to load events.</div>';
+    }
+  }
+  
+  loadDynamicEvents();
 </script>
 
 <a href="about.html" class="corner-btn" style="left: 15px;">About</a>
