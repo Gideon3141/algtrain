@@ -2,7 +2,6 @@ import { allAlgorithms as localAlgs } from './algs.js';
 import { initializeApp as initFirebase } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-// NEW: Import Google Analytics
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
 const firebaseConfig = {
@@ -18,7 +17,6 @@ const app = initFirebase(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-// NEW: Turn on Google Analytics
 const analytics = getAnalytics(app);
 
 const STORAGE_KEY = 'userCustomAlts';
@@ -118,7 +116,6 @@ function renderAlgs() {
   if (!algListDiv) return;
   algListDiv.innerHTML = '';
 
-  // Grab all solves for this event so we can calculate stats
   const allSolves = JSON.parse(localStorage.getItem(`${event}_${type}_times`) || '[]');
 
   algs.forEach(alg => {
@@ -147,14 +144,14 @@ function renderAlgs() {
     mainAlg.style.fontWeight = 'bold';
     card.appendChild(mainAlg);
 
-    // --- NEW: THE IMAGE & STATS CONTAINER ---
+   // i need to start using these really, gramerly idc if u want to correct my grammer get off my back
     const imgAndStatsDiv = document.createElement('div');
     imgAndStatsDiv.style.display = 'flex';
     imgAndStatsDiv.style.justifyContent = 'space-between';
     imgAndStatsDiv.style.alignItems = 'flex-start';
     imgAndStatsDiv.style.marginTop = '15px';
 
-    // 1. The Image "Blob"
+    // 1. The Image Blob nahh
     if (alg.image) {
       const img = document.createElement('img');
       img.src = alg.image;
@@ -162,11 +159,9 @@ function renderAlgs() {
       img.style.maxWidth = '100px';
       imgAndStatsDiv.appendChild(img);
     } else {
-      // Empty div so the stats still get pushed to the right
       imgAndStatsDiv.appendChild(document.createElement('div'));
     }
-
-    // 2. Calculate Math for the Stats
+    
     const algSolves = allSolves.filter(s => s.algName === alg.name);
     let bestTime = "--";
     let avgTime = "--";
@@ -177,7 +172,6 @@ function renderAlgs() {
       avgTime = (timesArray.reduce((sum, t) => sum + t, 0) / timesArray.length).toFixed(2);
     }
 
-    // 3. The Stats UI Box
     const statsBox = document.createElement('div');
     statsBox.style.textAlign = 'right';
     statsBox.style.backgroundColor = '#1e1e1e';
@@ -197,10 +191,7 @@ function renderAlgs() {
     `;
     imgAndStatsDiv.appendChild(statsBox);
 
-    // Add the combined row to the card
     card.appendChild(imgAndStatsDiv);
-    // --- END NEW STATS CONTAINER ---
-
 
     const globalAlts = alg.alternates || [];
     const personalAlts = userCustomAlts[alg.name] || [];
@@ -241,6 +232,7 @@ function renderAlgs() {
         altText.textContent = alt;
         altRow.appendChild(altText);
 
+        // yo ur rlly bored rn
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '×';
         deleteBtn.style.background = 'transparent';

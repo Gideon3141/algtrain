@@ -15,16 +15,16 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const ADMIN_UID = "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1"; // Your ID
+const ADMIN_UID = "CqkQ8vpZtZXVgxrvRJsuxIwOgkq1"; // my ID yay
 const algContainer = document.getElementById('alg-edit-list');
 const eventSelect = document.getElementById('event-select');
-const typeInput = document.getElementById('type-select'); // Changed to input for flexibility
+const typeInput = document.getElementById('type-select'); 
 const saveBtn = document.getElementById('save-all');
 const addAlgBtn = document.getElementById('add-new-alg');
 
 let currentAlgs = [];
 
-// Security check: Only you can stay on this page
+//if ur reading this get off, you shouldn't be here, ur no admin
 onAuthStateChanged(auth, (user) => {
     if (!user || user.uid !== ADMIN_UID) {
         alert("Admin access only.");
@@ -62,7 +62,6 @@ function renderEditor() {
     });
 }
 
-// Global functions so the HTML buttons can see them
 window.updateData = (index, field, value) => {
     if (field === 'alternates' || field === 'scrambles') {
         currentAlgs[index][field] = value.split(',').map(s => s.trim()).filter(s => s !== "");
@@ -90,6 +89,5 @@ saveBtn.addEventListener('click', async () => {
     alert("Saved successfully!");
 });
 
-// Load when you stop typing in the category name
 typeInput.addEventListener('change', loadAlgs);
 eventSelect.addEventListener('change', loadAlgs);

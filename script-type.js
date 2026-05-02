@@ -19,7 +19,6 @@ const eventSelected = urlParams.get("event") || "3x3";
 const typeButtonsDiv = document.getElementById("buttons");
 const backBtn = document.getElementById("backBtn");
 
-// Try to update a title if one exists on the page
 const titleEl = document.querySelector('h1');
 if (titleEl) {
     titleEl.textContent = `${eventSelected} Categories`;
@@ -32,29 +31,25 @@ async function createTypeButtons() {
     const querySnapshot = await getDocs(collection(db, "global_algs"));
     const types = new Set();
 
-    // Find all files that start with our selected event (e.g., "4x4_PLL")
     querySnapshot.forEach((doc) => {
       const docId = doc.id; 
       const parts = docId.split('_');
 
-      // If the first part matches "4x4", then the second part is the category ("PLL")
       if (parts.length > 1 && parts[0] === eventSelected) {
-         const typeName = parts.slice(1).join('_'); // Handles categories with underscores just in case
+         const typeName = parts.slice(1).join('_'); 
          types.add(typeName);
       }
     });
 
-    typeButtonsDiv.innerHTML = ""; // Clear loading text
+    typeButtonsDiv.innerHTML = "";
 
     if (types.size === 0) {
        typeButtonsDiv.innerHTML = "<p style='color: #ccc;'>No categories found for this puzzle yet.</p>";
     }
 
-    // Build the buttons
     types.forEach(type => {
       const btn = document.createElement("button");
       btn.textContent = type;
-      // Typical button styles (you can adjust if you have CSS classes)
       btn.style.padding = "10px 20px";
       btn.style.margin = "5px";
       btn.style.borderRadius = "8px";
@@ -65,7 +60,6 @@ async function createTypeButtons() {
       btn.style.fontWeight = "bold";
 
       btn.addEventListener("click", () => {
-        // Go to algs.html with the dynamic params!
         window.location.href = `algs.html?event=${encodeURIComponent(eventSelected)}&type=${encodeURIComponent(type)}`;
       });
       typeButtonsDiv.appendChild(btn);
@@ -78,7 +72,7 @@ async function createTypeButtons() {
 }
 
 backBtn.addEventListener("click", () => {
-  window.location.href = "index.html"; // Send back to the new dynamic homepage
+  window.location.href = "index.html"; 
 });
 
 createTypeButtons();

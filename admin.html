@@ -31,7 +31,6 @@
        <h1 style="margin: 0;">Admin Panel</h1>
     </div>
 
-    <!-- DATABASE TIME MACHINE CONTROLS -->
     <div class="db-controls" id="db-controls" style="display: none;">
         <button id="backup-all-btn" class="backup-btn">⬇️ Download Backup File</button>
         <button id="restore-btn" class="restore-btn">⬆️ Restore from Backup</button>
@@ -63,7 +62,6 @@
         </div>
         <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Leave dropdowns empty and use the text boxes to create entirely new events or categories.</p>
 
-        <!-- NEW: EVENT IMAGE UPLOADER -->
         <div style="margin-top: 25px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px dashed #4CAF50; display: inline-block; text-align: left;">
             <h4 style="margin: 0 0 10px 0; color: #4CAF50;">Event Thumbnail (For Home Page)</h4>
             <p style="font-size: 0.8rem; color: #888; margin-top: 0;">Select an Event above, then pick an image file to upload it directly to the cloud.</p>
@@ -114,7 +112,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    // NEW FIREBASE STORAGE IMPORTS
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     const firebaseConfig = {
@@ -166,7 +163,7 @@
         let uniqueEvents = new Set();
 
         querySnapshot.forEach((doc) => {
-            // Ignore system documents so they don't show up in dropdowns
+
             if(doc.id !== "notation_guide" && doc.id !== "_event_metadata") {
                 allCloudDocs.push(doc.id);
                 let parts = doc.id.split('_');
@@ -221,7 +218,6 @@
         return `${activeEvent}_${activeCat}`;
     }
 
-    // --- NEW: CLOUD IMAGE UPLOADER LOGIC ---
     const eventFileInput = document.getElementById('event-file-input');
     const uploadEventImgBtn = document.getElementById('upload-event-img-btn');
     const uploadStatus = document.getElementById('upload-status');
@@ -238,15 +234,12 @@
         uploadStatus.style.color = "#2196F3";
 
         try {
-            // 1. Send the physical file to Firebase Storage
             const fileExt = file.name.split('.').pop();
             const storageRef = ref(storage, `event_images/${activeEvent}.${fileExt}`);
             await uploadBytes(storageRef, file);
-            
-            // 2. Get the permanent web link for the file
+   
             const downloadURL = await getDownloadURL(storageRef);
 
-            // 3. Save the link to our metadata database
             await setDoc(doc(db, "global_algs", "_event_metadata"), {
                 [activeEvent]: downloadURL
             }, { merge: true });
@@ -267,8 +260,6 @@
         }
     });
 
-
-    // --- TIME MACHINE (BACKUP & RESTORE) ---
     document.getElementById('backup-all-btn').addEventListener('click', async () => {
         try {
             const querySnapshot = await getDocs(collection(db, "global_algs"));
@@ -313,7 +304,6 @@
         reader.readAsText(file);
     });
 
-    // --- ALGORITHM EDITOR LOGIC ---
     function renderEditor() {
       editorRows.innerHTML = '';
       currentAlgsList.forEach((alg, index) => {
@@ -448,7 +438,6 @@
       }
     });
 
-    /* Notation Editor Logic */
     async function loadNotationGuide() {
         try {
             const docSnap = await getDoc(doc(db, "global_algs", "notation_guide"));

@@ -1,5 +1,4 @@
 
-// Dark mode toggle functionality
 class DarkModeToggle {
   constructor() {
     this.toggleButton = document.getElementById('dark-mode-toggle');
@@ -9,10 +8,8 @@ class DarkModeToggle {
   }
 
   init() {
-    // Set initial theme
     this.applyTheme(this.currentTheme);
-    
-    // Add event listener
+
     if (this.toggleButton) {
       this.toggleButton.addEventListener('click', () => this.toggle());
     }
@@ -41,7 +38,6 @@ class DarkModeToggle {
   }
 }
 
-// Initialize dark mode toggle when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   new DarkModeToggle();
 });

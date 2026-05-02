@@ -23,13 +23,13 @@
       padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;
     }
     
-    /* Centered Grid Layout Fix */
+    /* ur beautiful whoever is reading this */
     .event-container {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center; /* Centers cards horizontally */
+      justify-content: center; 
       align-items: flex-start;
-      gap: 30px; /* Consistent space between cards */
+      gap: 30px; 
       padding: 40px 20px;
       max-width: 1200px;
       margin: 0 auto;
@@ -43,7 +43,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 250px; /* Fixed size to prevent overlapping */
+      width: 250px; 
       background: var(--bg-card);
       padding: 20px;
       border-radius: 20px;
@@ -194,11 +194,9 @@
     const passwordInput = document.getElementById('passwordInput');
     const authErrorMsg = document.getElementById('authErrorMsg');
 
-    // Login Modal
     function openModal() { authModal.style.display = 'flex'; modalOverlay.style.display = 'block'; authErrorMsg.textContent = ''; }
     function closeModal() { authModal.style.display = 'none'; modalOverlay.style.display = 'none'; }
 
-    // Account Modal
     function openAccountModal() {
       accountModal.style.display = 'flex';
       modalOverlay.style.display = 'block';

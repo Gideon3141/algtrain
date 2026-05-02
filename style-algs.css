@@ -1,4 +1,3 @@
-/* CSS Variables for theming */
 :root {
   --bg-primary: #000;
   --bg-secondary: #222;
@@ -219,12 +218,11 @@ nav button:hover:not(:disabled) {
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border-alt);
-  background-color: var(--bg-primary); /* Changed to primary to match light theme background */
+  background-color: var(--bg-primary); 
   color: var(--text-primary);
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
-/* Fix for placeholder text readability in light mode */
 .add-alt-container input::placeholder {
   color: var(--text-muted);
 }
@@ -240,7 +238,7 @@ nav button:hover:not(:disabled) {
   transition: background-color 0.3s ease;
 }
 
-/* Hide toggle on desktop (larger than 768px) */
+/* Hide toggle on desktop larger than 768px cuz gemini told me that's best */
 @media (min-width: 769px) {
   .toggle-arrow {
     display: none !important;
@@ -254,14 +252,14 @@ nav button:hover:not(:disabled) {
   }
 }
 
-/* Hide toggle button on desktop */
+/* Hide toggle button on desktop yay */
 @media (min-width: 769px) {
   .mobile-filters-toggle {
     display: none;
   }
 }
 
-/* Hide filters panel by default on mobile */
+/* Hide filters panel by default on mobile, this was weird */
 @media (max-width: 768px) {
   .filters {
     display: none;

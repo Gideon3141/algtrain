@@ -1,4 +1,4 @@
-/* CSS Variables for theming */
+/* CSS Variables for theming yelp me broo */
 :root {
   --bg-primary: #121212;
   --bg-secondary: #1f1f1f;
@@ -27,7 +27,6 @@
   --button-hover: #d0d0d0;
 }
 
-/* Reset & base */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -89,7 +88,6 @@ header nav button:hover:not(:disabled) {
   background-color: var(--button-hover);
 }
 
-/* Layout */
 main {
   flex: 1;
   display: flex;
@@ -190,7 +188,6 @@ main {
   background-color: var(--button-hover);
 }
 
-/* --- NEW: HISTORY PANEL GRID & LAYOUT --- */
 #history-panel {
   flex: 1 1 35%;
   background-color: var(--bg-secondary);
@@ -199,7 +196,7 @@ main {
   display: flex;
   flex-direction: column;
   max-height: 80vh;
-  position: relative; /* For absolute positioning the Delete All button */
+  position: relative; /* if u see this email me */
 }
 
 @media (max-width: 768px) {
@@ -211,7 +208,7 @@ main {
   }
 }
 
-/* Average time moved to Top using Flex Order */
+/* yo */
 .average-time {
   order: 1; 
   font-size: 1.4rem;
@@ -221,7 +218,6 @@ main {
   margin-bottom: 15px;
 }
 
-/* Grid Layout for Solves */
 .history-list {
   order: 2; 
   flex: 1;
@@ -256,7 +252,7 @@ main {
   border-color: var(--accent-color);
 }
 
-/* Corner Delete All Button */
+/* help me this takes forever */
 #delete-all {
   position: absolute;
   top: 15px;

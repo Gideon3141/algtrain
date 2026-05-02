@@ -138,7 +138,7 @@
     const modalOverlay = document.getElementById('modalOverlay');
     const closeNotationModalBtn = document.getElementById('closeNotationModalBtn');
     const notationListDiv = document.getElementById('notationList');
-    const notationTopDesc = document.getElementById('notationTopDesc'); // NEW
+    const notationTopDesc = document.getElementById('notationTopDesc');
 
     notationBtn.addEventListener('click', async () => {
       notationModal.style.display = 'flex';
@@ -152,16 +152,14 @@
           if (docSnap.exists()) {
             const data = docSnap.data();
 
-            // Handle the Top Explanation
             if (data.explanation && data.explanation.trim() !== '') {
-                // Convert line breaks to HTML so formatting looks nice
+           
                 notationTopDesc.innerHTML = data.explanation.replace(/\n/g, '<br>');
                 notationTopDesc.style.display = 'block';
             } else {
                 notationTopDesc.style.display = 'none';
             }
 
-            // Handle the List Items
             if (data.items && data.items.length > 0) {
               notationListDiv.innerHTML = '';
               data.items.forEach(item => {

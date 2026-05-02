@@ -108,7 +108,7 @@ function createCtxOption(text, onClick) {
     return btn;
 }
 
-ctxMenu.appendChild(createCtxOption('✏️ Rename', () => {
+ctxMenu.appendChild(createCtxOption('Rename', () => {
     if (!activeContextSessionItem || !activeContextSessionId) return;
     const session = sessions.find(s => s.id === activeContextSessionId);
 
@@ -142,7 +142,7 @@ ctxMenu.appendChild(createCtxOption('✏️ Rename', () => {
     input.select();
 }));
 
-ctxMenu.appendChild(createCtxOption('📤 Share', () => {
+ctxMenu.appendChild(createCtxOption('Share', () => {
     const sessionSolves = JSON.parse(localStorage.getItem(getStorageKey(activeContextSessionId)) || '[]');
     if (sessionSolves.length === 0) return alert("This session is empty!");
 
@@ -156,7 +156,7 @@ ctxMenu.appendChild(createCtxOption('📤 Share', () => {
     });
 }));
 
-ctxMenu.appendChild(createCtxOption('🗑️ Delete', () => {
+ctxMenu.appendChild(createCtxOption('Delete', () => {
     if (sessions.length <= 1) return alert("You cannot delete your only session.");
     if (confirm("Delete this session and all its times?")) {
         sessions = sessions.filter(s => s.id !== activeContextSessionId);
@@ -174,7 +174,7 @@ ctxMenu.appendChild(createCtxOption('🗑️ Delete', () => {
 // --- DYNAMIC UI: FLOATING SESSION BUTTON & DROPDOWN ---
 const sessionWrapper = document.createElement('div');
 sessionWrapper.style.position = 'absolute';
-// Positioned right under the header (header is usually ~60-70px tall)
+// Positioned right under the header
 sessionWrapper.style.top = '80px'; 
 sessionWrapper.style.right = '20px';
 sessionWrapper.style.zIndex = '2000';
@@ -305,7 +305,7 @@ window.renderSessionMenu = function() {
 
 window.updateSessionBtn = function() {
     const current = sessions.find(s => s.id === currentSessionId);
-    sessionBtn.innerHTML = `📁 ${current ? current.name : 'Session 1'} ▾`;
+    sessionBtn.innerHTML = `${current ? current.name : 'Session 1'} ▾`;
 }
 
 window.saveSessions = function() {
@@ -339,7 +339,6 @@ updateSessionBtn();
 sessionWrapper.appendChild(sessionBtn);
 sessionWrapper.appendChild(sessionMenu);
 
-// Attach directly to the body, completely avoiding the navigation bar
 document.body.appendChild(sessionWrapper);
 
 
@@ -476,6 +475,7 @@ function setupFilters() {
     });
 }
 
+  // if ur reading this what are you doing
 function startTimer() {
     isRunning = true;
     startTime = performance.now();
@@ -668,7 +668,7 @@ function showDetail(index) {
     btnRow.style.marginBottom = '10px';
 
     const shareBtn = document.createElement('button');
-    shareBtn.innerHTML = '📤 Share';
+    shareBtn.innerHTML = 'Share';
     shareBtn.style.flex = '1';
     shareBtn.style.padding = "10px";
     shareBtn.style.borderRadius = "8px";
@@ -682,13 +682,13 @@ function showDetail(index) {
         const text = `${solve.algName || "Random Scramble"}\n${parseFloat(solve.time).toFixed(2)}\n${solve.scramble}`;
         navigator.clipboard.writeText(text).then(() => {
             const originalHtml = shareBtn.innerHTML;
-            shareBtn.innerHTML = '✅ Copied!';
+            shareBtn.innerHTML = 'Copied!';
             setTimeout(() => shareBtn.innerHTML = originalHtml, 2000);
         });
     };
 
     const deleteBtn = document.createElement('button');
-    deleteBtn.innerHTML = '🗑️ Delete';
+    deleteBtn.innerHTML = 'Delete';
     deleteBtn.style.flex = '1';
     deleteBtn.style.padding = "10px";
     deleteBtn.style.borderRadius = "8px";

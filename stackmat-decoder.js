@@ -1,4 +1,3 @@
-// stackmat-decoder.js
 import { Stackmat } from 'https://esm.sh/stackmat';
 
 export class StackmatDecoder {
@@ -16,7 +15,6 @@ export class StackmatDecoder {
             if (currentState !== this.lastState) {
                 this.lastState = currentState;
 
-                // Send the state AND the exact string from the timer hardware
                 callback({ 
                     state: currentState, 
                     timeStr: packet.timeAsString,
