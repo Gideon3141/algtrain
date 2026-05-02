@@ -7,13 +7,14 @@
   <link rel="stylesheet" href="style-index.css" />
   <style>
     .admin-container { background: #222; padding: 30px; border-radius: 12px; max-width: 1100px; margin: 20px auto; border: 1px solid #444; color: white; }
-    .alg-edit-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; }
-    .alg-edit-row input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; min-width: 0; transition: border 0.3s; }
+    .alg-edit-row { display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-start; border-bottom: 1px solid #333; padding-bottom: 15px; }
+    .alg-edit-row input, .alg-edit-row textarea { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; flex: 1; min-width: 0; transition: border 0.3s; font-family: monospace; }
+    .alg-edit-row textarea { resize: vertical; min-height: 40px; }
     select, .text-input { padding: 8px; border-radius: 4px; background: #333; color: white; border: 1px solid #444; }
     button { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
     .save-btn { background-color: #4CAF50; color: white; }
     .add-btn { background-color: #2196F3; color: white; }
-    .delete-btn { background-color: #f44336; color: white; padding: 5px 10px; }
+    .delete-btn { background-color: #f44336; color: white; padding: 5px 10px; margin-top: 4px; }
     .delete-cat-btn { background-color: #d32f2f; color: white; }
     .nav-btn { background-color: #555; color: white; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; }
     .control-bar { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #444; }
@@ -126,7 +127,7 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const storage = getStorage(app); // INITIALIZE STORAGE
+    const storage = getStorage(app); 
 
     const ADMIN_UIDS = ["CqkQ8vpZtZXVgxrvRJsuxIwOgkq1", "3X2xCCJMnYgvGIv4U9xSchP6UVn2"];
 
@@ -163,7 +164,6 @@
         let uniqueEvents = new Set();
 
         querySnapshot.forEach((doc) => {
-
             if(doc.id !== "notation_guide" && doc.id !== "_event_metadata") {
                 allCloudDocs.push(doc.id);
                 let parts = doc.id.split('_');
@@ -310,13 +310,15 @@
           const row = document.createElement('div');
           row.className = 'alg-edit-row';
           row.innerHTML = `
-            <span>${index + 1}.</span>
-            <input type="text" value="${alg.name || ''}" data-field="name" data-index="${index}" placeholder="Name">
-            <input type="text" value="${alg.alg || ''}" data-field="alg" data-index="${index}" placeholder="Algorithm">
-            <input type="text" value="${alg.alternates ? alg.alternates.join(', ') : ''}" data-field="alternates" data-index="${index}" placeholder="Alts">
-            <input type="text" value="${alg.scrambles ? alg.scrambles.join(', ') : ''}" data-field="scrambles" data-index="${index}" placeholder="Scrambles">
-            <input type="text" value="${alg.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL">
-            <button class="delete-btn" data-index="${index}" style="background:#f44336; color:white; padding:5px 10px;">X</button>
+            <span style="font-weight: bold; margin-top: 8px;">${index + 1}.</span>
+            <div style="display: flex; flex-direction: column; flex: 1; gap: 5px;">
+                <input type="text" value="${alg.name || ''}" data-field="name" data-index="${index}" placeholder="Name">
+                <input type="text" value="${alg.alg || ''}" data-field="alg" data-index="${index}" placeholder="Algorithm">
+                <input type="text" value="${alg.image || ''}" data-field="image" data-index="${index}" placeholder="Image URL">
+            </div>
+            <textarea data-field="alternates" data-index="${index}" placeholder="Alternates (One per line)" rows="3">${alg.alternates ? alg.alternates.join('\n') : ''}</textarea>
+            <textarea data-field="scrambles" data-index="${index}" placeholder="Scrambles (One per line)" rows="3">${alg.scrambles ? alg.scrambles.join('\n') : ''}</textarea>
+            <button class="delete-btn" data-index="${index}">X</button>
           `;
           editorRows.appendChild(row);
       });
@@ -331,13 +333,13 @@
     }
 
     function syncListFromInputs() {
-      const inputs = editorRows.querySelectorAll('input');
+      const inputs = editorRows.querySelectorAll('input, textarea');
       inputs.forEach(input => {
         const idx = input.dataset.index;
         const field = input.dataset.field;
         if (!currentAlgsList[idx]) return;
         if (field === 'scrambles' || field === 'alternates') {
-          currentAlgsList[idx][field] = input.value.split(',').map(s => s.trim()).filter(s => s !== '');
+          currentAlgsList[idx][field] = input.value.split('\n').map(s => s.trim()).filter(s => s !== '');
         } else {
           currentAlgsList[idx][field] = input.value;
         }
