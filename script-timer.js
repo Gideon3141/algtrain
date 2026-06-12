@@ -157,6 +157,9 @@ ctxMenu.appendChild(createCtxOption('Share', () => {
 }));
 
 ctxMenu.appendChild(createCtxOption('Delete', () => {
+    if (activeContextSessionId === 'default') {
+        return alert("You cannot delete the original default session. This session is linked to your main history.");
+    }
     if (sessions.length <= 1) return alert("You cannot delete your only session.");
     if (confirm("Delete this session and all its times?")) {
         sessions = sessions.filter(s => s.id !== activeContextSessionId);
