@@ -33,8 +33,8 @@
     </div>
 
     <div class="db-controls" id="db-controls" style="display: none;">
-        <button id="backup-all-btn" class="backup-btn">⬇️ Download Backup File</button>
-        <button id="restore-btn" class="restore-btn">⬆️ Restore from Backup</button>
+        <button id="backup-all-btn" class="backup-btn"> Download Backup File</button>
+        <button id="restore-btn" class="restore-btn"> Restore from Backup</button>
         <input type="file" id="restore-file" accept=".json" style="display: none;">
     </div>
 
@@ -44,28 +44,26 @@
     <div id="admin-panel" style="display: none;">
 
       <div class="admin-container">
-        <h2>1. Select Event & Category</h2>
+        <h2> Event & Category</h2>
 
         <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
           <select id="event-dropdown" style="min-width: 120px;">
-              <option value="">Select Event...</option>
+              <option value="">Select Event</option>
           </select>
           <input type="text" id="event-input" class="text-input" placeholder="OR type new (e.g. 4x4)" style="max-width: 150px;">
 
           <span style="color: #888; font-weight: bold; font-size: 1.5rem;">/</span>
 
           <select id="category-dropdown" style="min-width: 140px;">
-              <option value="">Select Category...</option>
+              <option value="">Select Category</option>
           </select>
           <input type="text" id="category-input" class="text-input" placeholder="OR type new (e.g. OLL)" style="max-width: 150px;">
-
-          <button id="load-algs-btn" style="background-color: #2196F3; color: white; margin-left: 10px;">Load Data</button>
         </div>
-        <p style="color: #aaa; font-size: 0.85rem; margin: 0;">Leave dropdowns empty and use the text boxes to create entirely new events or categories.</p>
+        <p style="color: #aaa; font-size: 0.85rem; margin: 0;">for ppl in the future just type new categories in the boxes, have fun or smth</p>
 
         <div style="margin-top: 25px; padding: 15px; background: #1a1a1a; border-radius: 8px; border: 1px dashed #4CAF50; display: inline-block; text-align: left;">
-            <h4 style="margin: 0 0 10px 0; color: #4CAF50;">Event Thumbnail (For Home Page)</h4>
-            <p style="font-size: 0.8rem; color: #888; margin-top: 0;">Select an Event above, then pick an image file to upload it directly to the cloud.</p>
+            <h4 style="margin: 0 0 10px 0; color: #4CAF50;">Event picture in home</h4>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 0;"></p>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <input type="file" id="event-file-input" accept="image/*" style="background: #333; color: white; padding: 5px; border-radius: 4px;">
                 <button id="upload-event-img-btn" class="save-btn" style="padding: 8px 12px; font-size: 0.9rem;">Upload to Cloud</button>
@@ -76,12 +74,12 @@
       </div>
 
       <div class="admin-container">
-        <h2>2. Algorithm Editor</h2>
+        <h2>algs</h2>
         <div id="editor-rows"></div>
 
         <div class="control-bar" id="editor-controls" style="display: none;">
             <button id="add-row-btn" class="add-btn">+ Add Row</button>
-            <button id="auto-scramble-btn" style="background-color: #9c27b0; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;">🪄 Auto-Fill Scrambles</button>
+            <button id="auto-scramble-btn" style="background-color: #9c27b0; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;"> Auto-Fill Scrambles</button>
 
             <input type="text" id="category-image-input" class="text-input" placeholder="Category Image URL (e.g. images/pll.png)" style="flex-grow: 1; min-width: 200px;">
             <button id="save-algs-btn" class="save-btn">Save Changes to Cloud</button>
@@ -90,10 +88,10 @@
       </div>
 
       <div class="admin-container" style="border: 2px dashed #666; margin-top: 40px; text-align: left;">
-        <h2 style="text-align: center;">3. Notation & About Editor</h2>
+        <h2 style="text-align: center;">Notation and about shii</h2>
 
         <div style="margin-bottom: 25px; padding-top: 15px; border-top: 1px solid #333;">
-            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #4CAF50;">Top Explanation (About / Colors):</label>
+            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #4CAF50;">Explanation</label>
             <textarea id="notation-top-text" style="width: 100%; min-height: 100px; padding: 12px; border-radius: 8px; background: #333; color: white; border: 1px solid #444; font-family: inherit; font-size: 1rem; resize: vertical;" placeholder="Explain the colors (e.g. Green = Complete) or general info here..."></textarea>
         </div>
 
@@ -164,6 +162,7 @@
         let uniqueEvents = new Set();
 
         querySnapshot.forEach((doc) => {
+
             if(doc.id !== "notation_guide" && doc.id !== "_event_metadata") {
                 allCloudDocs.push(doc.id);
                 let parts = doc.id.split('_');
@@ -200,11 +199,6 @@
         });
     }
 
-    eventDropdown.addEventListener('change', () => { eventInput.value = ''; updateCategoryDropdown(); resetEditor(); });
-    eventInput.addEventListener('input', () => { eventDropdown.value = ''; updateCategoryDropdown(); resetEditor(); });
-    catDropdown.addEventListener('change', () => { catInput.value = ''; resetEditor(); });
-    catInput.addEventListener('input', () => { catDropdown.value = ''; resetEditor(); });
-
     function resetEditor() {
         currentAlgsList = [];
         editorRows.innerHTML = '';
@@ -217,6 +211,38 @@
         if (!activeEvent || !activeCat) return null;
         return `${activeEvent}_${activeCat}`;
     }
+
+    // --- AUTO-LOAD LOGIC ---
+    async function handleAutoLoad(isManual = false) {
+        const fullId = getActiveId();
+        if (!fullId) {
+            resetEditor();
+            return;
+        }
+
+        const docSnap = await getDoc(doc(db, "global_algs", fullId));
+        currentAlgsList = []; 
+
+        if (docSnap.exists()) {
+            currentAlgsList = docSnap.data().algs || [];
+            catImageInput.value = docSnap.data().categoryImage || '';
+        } else {
+            catImageInput.value = '';
+            if (isManual) {
+                alert(`Empty/New category '${fullId}' initialized. Start adding rows!`);
+            }
+        }
+        renderEditor();
+        controls.style.display = 'flex';
+    }
+
+    eventDropdown.addEventListener('change', () => { eventInput.value = ''; updateCategoryDropdown(); handleAutoLoad(); });
+    eventInput.addEventListener('input', () => { eventDropdown.value = ''; updateCategoryDropdown(); resetEditor(); });
+    eventInput.addEventListener('change', () => { handleAutoLoad(true); });
+
+    catDropdown.addEventListener('change', () => { catInput.value = ''; handleAutoLoad(); });
+    catInput.addEventListener('input', () => { catDropdown.value = ''; resetEditor(); });
+    catInput.addEventListener('change', () => { handleAutoLoad(true); });
 
     const eventFileInput = document.getElementById('event-file-input');
     const uploadEventImgBtn = document.getElementById('upload-event-img-btn');
@@ -286,7 +312,7 @@
         reader.onload = async (event) => {
             try {
                 const backupData = JSON.parse(event.target.result);
-                if(!confirm("⚠️ DANGER: This will completely overwrite your live cloud database with the data in this file. Are you absolutely sure?")) {
+                if(!confirm("This will completely overwrite your live cloud database with the data in this file. if u aint alowed to do this get out of here ")) {
                     document.getElementById('restore-file').value = ''; 
                     return;
                 }
@@ -386,24 +412,6 @@
         renderEditor();
         if(generatedCount > 0) alert(`🪄 SUPER MAGIC complete! Generated 5 disguised scrambles per algorithm.`);
         else alert("No empty scrambles needed filling.");
-    });
-
-    document.getElementById('load-algs-btn').addEventListener('click', async () => {
-      const fullId = getActiveId();
-      if (!fullId) return alert("You must select or type an Event AND a Category first.");
-
-      const docSnap = await getDoc(doc(db, "global_algs", fullId));
-      currentAlgsList = []; 
-
-      if (docSnap.exists()) {
-        currentAlgsList = docSnap.data().algs || [];
-        catImageInput.value = docSnap.data().categoryImage || '';
-      } else {
-        catImageInput.value = '';
-        alert("Empty/New category initialized. Start adding rows!");
-      }
-      renderEditor();
-      controls.style.display = 'flex';
     });
 
     document.getElementById('add-row-btn').addEventListener('click', () => {
