@@ -519,9 +519,14 @@ startStopBtn.addEventListener('mouseup', () => {
 document.addEventListener('keydown', (e) => {
     if (document.activeElement && document.activeElement.tagName === 'INPUT' && document.activeElement !== typingInput) return;
 
-    if (e.altKey && e.code === 'KeyZ') {
+    // ADDED: Supports both Alt+Z and Ctrl+Z, with a confirmation alert
+    if ((e.altKey || e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
         e.preventDefault();
-        if (solves.length > 0) deleteSolve(0);
+        if (solves.length > 0) {
+            if (confirm("Undo: Are you sure you want to delete the last solve?")) {
+                deleteSolve(0);
+            }
+        }
         return;
     }
 

@@ -79,7 +79,6 @@
 
         <div class="control-bar" id="editor-controls" style="display: none;">
             <button id="add-row-btn" class="add-btn">+ Add Row</button>
-            <button id="auto-scramble-btn" style="background-color: #9c27b0; color: white; padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold;"> Auto-Fill Scrambles</button>
 
             <input type="text" id="category-image-input" class="text-input" placeholder="Category Image URL (e.g. images/pll.png)" style="flex-grow: 1; min-width: 200px;">
             <button id="save-algs-btn" class="save-btn">Save Changes to Cloud</button>
@@ -371,48 +370,6 @@
         }
       });
     }
-
-    function generateScramblesForAlg(baseAlg, altsArray) {
-        if (!baseAlg) return [];
-        let algsToUse = [baseAlg];
-        if (altsArray && altsArray.length > 0 && altsArray[0] !== "") algsToUse.push(...altsArray);
-
-        let inverses = algsToUse.map(alg => {
-            const moves = alg.trim().split(/\s+/);
-            return moves.reverse().map(move => {
-                if (move.endsWith("'")) return move.slice(0, -1);
-                if (move.endsWith("2")) return move;
-                return move + "'";
-            }).join(" ");
-        });
-
-        let scrambles = [];
-        const combos = [ ["", ""], ["U", "U'"], ["U'", "U2"], ["U2", "U"], ["U", "U"] ];
-        for(let i = 0; i < 5; i++) {
-            let inv = inverses[i % inverses.length]; 
-            let combo = combos[i]; 
-            let s = inv;
-            if (combo[0]) s = combo[0] + " " + s;
-            if (combo[1]) s = s + " " + combo[1];
-            s = s.replace(/\s+/g, ' ').trim();
-            scrambles.push(s);
-        }
-        return scrambles;
-    }
-
-    document.getElementById('auto-scramble-btn').addEventListener('click', () => {
-        syncListFromInputs();
-        let generatedCount = 0;
-        currentAlgsList.forEach(item => {
-            if (item.alg && (!item.scrambles || item.scrambles.length === 0 || item.scrambles[0] === "")) {
-                item.scrambles = generateScramblesForAlg(item.alg, item.alternates);
-                generatedCount++;
-            }
-        });
-        renderEditor();
-        if(generatedCount > 0) alert(`🪄 SUPER MAGIC complete! Generated 5 disguised scrambles per algorithm.`);
-        else alert("No empty scrambles needed filling.");
-    });
 
     document.getElementById('add-row-btn').addEventListener('click', () => {
         syncListFromInputs();
