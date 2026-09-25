@@ -436,7 +436,8 @@ function setScramble() {
     const filteredAlgs = allAlgs.filter(alg => filterStatuses.has(alg.status));
 
     if (filteredAlgs.length === 0) {
-        currentScramble = generateScramble();
+        
+        currentScramble = "No algs match selected filters";
         currentAlgData = null; 
     } else {
         const randomAlg = filteredAlgs[Math.floor(Math.random() * filteredAlgs.length)];
@@ -468,17 +469,23 @@ function setupFilters() {
             JSON.parse(localStorage.getItem(TIMER_FILTER_KEY) || '["not learnt", "learning", "complete"]')
         );
         cb.checked = filterStatuses.has(cb.value);
-        cb.addEventListener('change', () => {
-            const newFilterStatuses = new Set(
-                Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked')).map(el => el.value)
-            );
+        cb.addEventListener('change', function() {
+            const checkedBoxes = Array.from(filtersDiv.querySelectorAll('input[type=checkbox]:checked'));
+
+            // Prevent unchecking the very last active filter
+            if (checkedBoxes.length === 0) {
+                this.checked = true;
+                alert("You need at least one filter");
+                return;
+            }
+
+            const newFilterStatuses = new Set(checkedBoxes.map(el => el.value));
             localStorage.setItem(TIMER_FILTER_KEY, JSON.stringify(Array.from(newFilterStatuses)));
             setScramble();
         });
     });
 }
 
-  // if ur reading this what are you doing
 function startTimer() {
     isRunning = true;
     startTime = performance.now();
